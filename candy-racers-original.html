@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en" data-arcade-game="third-original">
+<head><script src="arcade-economy.js" data-game="third"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sugar Rush GP - Candy Match Racer</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+    background: #250938;
+    color: #fff;
+  }
+
+  #game-container {
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  /* 3D Track Viewport (Top 46%) */
+  #viewport-3d {
+    width: 100%;
+    height: 46%;
+    position: relative;
+    background: #ffbbf0;
+    border-bottom: 5px solid #ff4181;
+    overflow: hidden;
+  }
+  #canvas3d {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* HUD Overlay on 3D View */
+  .hud-panel {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .hud-badge {
+    background: rgba(35, 10, 50, 0.75);
+    border: 2px solid #ff88cc;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 800;
+    text-shadow: 0 0 5px #ff2a85;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+  #boost-gauge-wrap {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    height: 14px;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    z-index: 10;
+  }
+  #boost-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #ff007f, #ffee55);
+    transition: width 0.15s ease-out;
+  }
+
+  /* Match-3 Puzzle Arena (Bottom 54%) */
+  #puzzle-arena {
+    width: 100%;
+    height: 54%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #54136e 0%, #1e052d 100%);
+    position: relative;
+  }
+  #puzzle-header {
+    font-size: 13px;
+    font-weight: bold;
+    color: #ffc4e8;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px #000;
+  }
+
+  /* Candy Grid */
+  #grid-wrapper {
+    position: relative;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 3px solid #ff72bb;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,105,180,0.3);
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    gap: 4px;
+    touch-action: none;
+  }
+  .tile {
+    width: 38px;
+    height: 38px;
+    background: rgba(45, 12, 60, 0.5);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    transition: transform 0.15s, filter 0.15s;
+    user-select: none;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3);
+  }
+  @media (min-height: 750px) and (min-width: 420px) {
+    .tile {
+      width: 48px;
+      height: 48px;
+      font-size: 28px;
+    }
+  }
+  .tile.selected {
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 8px #ffeb3b);
+    background: rgba(255, 255, 255, 0.35);
+    border: 2px solid #fff;
+  }
+  .tile.pop {
+    animation: popAnim 0.25s forwards ease-out;
+  }
+  @keyframes popAnim {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4) rotate(15deg); opacity: 0.8; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  /* Overlay Screens */
+  .modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(18, 2, 28, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    text-align: center;
+    padding: 20px;
+  }
+  .modal-overlay h1 {
+    font-size: 34px;
+    color: #ff3399;
+    text-shadow: 0 0 15px #ff77c2, 0 3px 0 #fff;
+    margin-bottom: 10px;
+  }
+  .modal-overlay p {
+    font-size: 15px;
+    max-width: 360px;
+    line-height: 1.5;
+    color: #ffdef2;
+    margin-bottom: 24px;
+  }
+  .btn-start {
+    background: linear-gradient(180deg, #ff4081, #d81b60);
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    border: 3px solid #ffb2db;
+    border-radius: 30px;
+    padding: 12px 35px;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(255, 64, 129, 0.6);
+    transition: transform 0.1s;
+  }
+  .btn-start:active {
+    transform: scale(0.96);
+  }
+  #rank-callout {
+    font-size: 26px;
+    font-weight: 900;
+    color: #ffee55;
+    margin-bottom: 12px;
+  }
+</style>
+<!-- Three.js from official cdnjs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="stylesheet" href="arcade-games.css"><script src="pet-a-duck-art.js"></script><script src="arcade-art.js"></script></head>
+<body>
+
+<div id="game-container">
+  
+  <!-- 3D Race Viewport -->
+  <div id="viewport-3d">
+    <canvas id="canvas3d"></canvas>
+    
+    <div class="hud-panel">
+      <div class="hud-badge">🏁 DIST: <span id="dist-txt">1000m</span></div>
+      <div class="hud-badge">🏎️ POS: <span id="pos-txt">3rd</span></div>
+      <div class="hud-badge">⭐ <span id="score-txt">0</span></div>
+    </div>
+
+    <div id="boost-gauge-wrap" title="Match candies to fill Turbo!">
+      <div id="boost-fill"></div>
+    </div>
+  </div>
+
+  <!-- Candy Match-3 Grid -->
+  <div id="puzzle-arena">
+    <div id="puzzle-header">🍬 Match 3 Candies to Boost Kart Speed! 🍬</div>
+    <div id="grid-wrapper">
+      <div id="grid"></div>
+    </div>
+  </div>
+
+  <!-- Start Screen -->
+  <div id="start-modal" class="modal-overlay">
+    <h1>SUGAR RUSH GP</h1>
+    <p>
+      Swap and match candies below to power up your candy kart engine! 
+      Chain combos together to overtake rivals and cross the finish line in 1st place!
+    </p>
+    <button class="btn-start" onclick="startGame()">START RACE 🚀</button>
+  </div>
+
+  <!-- Finish Screen -->
+  <div id="finish-modal" class="modal-overlay" style="display: none;">
+    <h1 id="win-title">RACE FINISHED!</h1>
+    <div id="rank-callout">1st Place - CHAMPION! 🏆</div>
+    <p id="final-stats">Total Candies Crushed: 42<br>Final Score: 15,200</p>
+    <button class="btn-start" onclick="restartGame()">PLAY AGAIN 🔁</button>
+  </div>
+
+</div>
+
+<script>
+/* ==========================================================================
+   1. SOUND SYNTHESIS ENGINE (Web Audio API)
+   ========================================================================== */
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+function playTone(freq, type, duration, gainVal=0.1) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  } catch (e) {}
+}
+
+function playSwapSound() {
+  playTone(400, 'triangle', 0.08, 0.08);
+}
+function playMatchSound(multiplier = 1) {
+  const base = 520 + (multiplier * 75);
+  playTone(base, 'sine', 0.15, 0.12);
+  setTimeout(() => playTone(base * 1.33, 'sine', 0.2, 0.1), 60);
+}
+function playBoostSound() {
+  playTone(220, 'sawtooth', 0.4, 0.15);
+  setTimeout(() => playTone(440, 'sawtooth', 0.5, 0.12), 100);
+}
+
+/* ==========================================================================
+   2. CANDY CRUSH PUZZLE ENGINE (7x7 Grid)
+   ========================================================================== */
+const CANDY_TYPES = [
+  { id: 0, icon: '🍬', color: '#ff2a85' }, // Strawberry Candy
+  { id: 1, icon: '🐻', color: '#ff9800' }, // Orange Gummy Bear
+  { id: 2, icon: '🍋', color: '#ffeb3b' }, // Lemon Drop
+  { id: 3, icon: '🍏', color: '#4caf50' }, // Sour Apple Mint
+  { id: 4, icon: '🍫', color: '#795548' }  // Chocolate Drop
+];
+
+const GRID_SIZE = 7;
+let board = [];
+let selectedTile = null;
+let isProcessing = false;
+let score = 0;
+let candiesClearedTotal = 0;
+const gridEl = document.getElementById('grid');
+
+function initPuzzle() {
+  gridEl.innerHTML = '';
+  board = [];
+  for (let r = 0; r < GRID_SIZE; r++) {
+    board[r] = [];
+    for (let c = 0; c < GRID_SIZE; c++) {
+      let type;
+      do {
+        type = Math.floor(Math.random() * CANDY_TYPES.length);
+      } while (
+        (c >= 2 && board[r][c - 1] === type && board[r][c - 2] === type) ||
+        (r >= 2 && board[r - 1][c] === type && board[r - 2][c] === type)
+      );
+      board[r][c] = type;
+      
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.dataset.r = r;
+      tile.dataset.c = c;
+      tile.innerText = CANDY_TYPES[type].icon;
+      tile.addEventListener('pointerdown', (e) => onTileClick(r, c, e));
+      gridEl.appendChild(tile);
+    }
+  }
+}
+
+function getTileEl(r, c) {
+  return gridEl.children[r * GRID_SIZE + c];
+}
+
+function updateTileVisual(r, c) {
+  const el = getTileEl(r, c);
+  const type = board[r][c];
+  if (type !== null && type >= 0) {
+    el.innerText = CANDY_TYPES[type].icon;
+    el.classList.remove('pop');
+  } else {
+    el.innerText = '';
+  }
+}
+
+async function onTileClick(r, c) {
+  if (isProcessing || raceFinished) return;
+  initAudio();
+
+  if (!selectedTile) {
+    selectedTile = { r, c };
+    getTileEl(r, c).classList.add('selected');
+    playSwapSound();
+  } else {
+    const r1 = selectedTile.r;
+    const c1 = selectedTile.c;
+    getTileEl(r1, c1).classList.remove('selected');
+
+    // Check if clicked tile is an orthogonal neighbor
+    const isNeighbor = (Math.abs(r1 - r) + Math.abs(c1 - c)) === 1;
+
+    if (isNeighbor) {
+      isProcessing = true;
+      await swapCandies(r1, c1, r, c);
+      const matches = findMatches();
+      if (matches.length > 0) {
+        await handleMatches(matches);
+      } else {
+        // Swap back if no match formed
+        await swapCandies(r1, c1, r, c);
+      }
+      isProcessing = false;
+    }
+    selectedTile = null;
+  }
+}
+
+function swapCandies(r1, c1, r2, c2) {
+  return new Promise(resolve => {
+    playSwapSound();
+    const temp = board[r1][c1];
+    board[r1][c1] = board[r2][c2];
+    board[r2][c2] = temp;
+    updateTileVisual(r1, c1);
+    updateTileVisual(r2, c2);
+    setTimeout(resolve, 150);
+  });
+}
+
+function findMatches() {
+  const matched = new Set();
+
+  // Horizontal scan
+  for (let r = 0; r < GRID_SIZE; r++) {
+    let matchLen = 1;
+    for (let c = 0; c < GRID_SIZE; c++) {
+      let isLast = (c === GRID_SIZE - 1);
+      let same = !isLast && board[r][c] !== null && board[r][c] === board[r][c + 1];
+      if (same) {
+        matchLen++;
+      } else {
+        if (matchLen >= 3) {
+          for (let i = 0; i < matchLen; i++) matched.add(`${r},${c - i}`);
+        }
+        matchLen = 1;
+      }
+    }
+  }
+
+  // Vertical scan
+  for (let c = 0; c < GRID_SIZE; c++) {
+    let matchLen = 1;
+    for (let r = 0; r < GRID_SIZE; r++) {
+      let isLast = (r === GRID_SIZE - 1);
+      let same = !isLast && board[r][c] !== null && board[r][c] === board[r + 1][c];
+      if (same) {
+        matchLen++;
+      } else {
+        if (matchLen >= 3) {
+          for (let i = 0; i < matchLen; i++) matched.add(`${r - i},${c}`);
+        }
+        matchLen = 1;
+      }
+    }
+  }
+
+  return Array.from(matched).map(coord => {
+    const [r, c] = coord.split(',').map(Number);
+    return { r, c };
+  });
+}
+
+async function handleMatches(matches, combo = 1) {
+  playMatchSound(combo);
+
+  // Pop animation & score tally
+  matches.forEach(({ r, c }) => {
+    const el = getTileEl(r, c);
+    el.classList.add('pop');
+    board[r][c] = null;
+  });
+
+  const count = matches.length;
+  candiesClearedTotal += count;
+  score += count * 100 * combo;
+  document.getElementById('score-txt').innerText = score;
+
+  // Boost Kart Turbo Engine based on candies cleared
+  grantKartBoost(count * (combo > 1 ? 1.4 : 1));
+
+  await new Promise(r => setTimeout(r, 220));
+
+  // Drop tiles down
+  for (let c = 0; c < GRID_SIZE; c++) {
+    let emptyRow = GRID_SIZE - 1;
+    for (let r = GRID_SIZE - 1; r >= 0; r--) {
+      if (board[r][c] !== null) {
+        if (emptyRow !== r) {
+          board[emptyRow][c] = board[r][c];
+          board[r][c] = null;
+          updateTileVisual(emptyRow, c);
+          updateTileVisual(r, c);
+        }
+        emptyRow--;
+      }
+    }
+    // Refill empty tops
+    for (let r = emptyRow; r >= 0; r--) {
+      board[r][c] = Math.floor(Math.random() * CANDY_TYPES.length);
+      updateTileVisual(r, c);
+    }
+  }
+
+  await new Promise(r => setTimeout(r, 160));
+
+  // Recursive combo chain check
+  const nextMatches = findMatches();
+  if (nextMatches.length > 0) {
+    await handleMatches(nextMatches, combo + 1);
+  }
+}
+
+/* ==========================================================================
+   3. 3D CANDY RACE CAR ENGINE (Three.js)
+   ========================================================================== */
+let scene, camera, renderer;
+let playerKart, rivalKart1, rivalKart2;
+let trackSegments = [];
+let candyDecorations = [];
+let boostSparks = [];
+
+const TOTAL_RACE_DISTANCE = 1000;
+let playerProgress = 0;
+let rival1Progress = 20;
+let rival2Progress = 50;
+let playerSpeed = 0.55;
+let boostTimer = 0;
+let raceFinished = false;
+
+function init3D() {
+  const container = document.getElementById('viewport-3d');
+  const canvas = document.getElementById('canvas3d');
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xeed9e8);
+  scene.fog = new THREE.FogExp2(0xeed9e8, 0.015);
+
+  camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 500);
+
+  renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+
+  // Lighting
+  const ambientLight = new THREE.AmbientLight(0xfff0f5, 0.85);
+  scene.add(ambientLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+  dirLight.position.set(20, 40, 30);
+  dirLight.castShadow = true;
+  scene.add(dirLight);
+
+  // Build Procedural Candy Track
+  buildTrackRoad();
+  buildCandyProps();
+
+  // Create Karts
+  playerKart = createKart(0xe4a9c4, 0xf6deab); // Player: Pink & Lemon
+  rivalKart1 = createKart(0xa6cddc, 0xffffff); // Rival 1: Sky Blue & Cream
+  rivalKart2 = createKart(0xb29cce, 0xb9d4a9); // Rival 2: Grape & Lime
+
+  scene.add(playerKart);
+  scene.add(rivalKart1);
+  scene.add(rivalKart2);
+
+  playerKart.position.set(0, 0.5, 0);
+  rivalKart1.position.set(-2.2, 0.5, 30);
+  rivalKart2.position.set(2.2, 0.5, 50);
+
+  window.addEventListener('resize', onResize);
+}
+
+// Procedural Candy Road & Curbs
+function buildTrackRoad() {
+  const roadGeo = new THREE.PlaneGeometry(12, 1000, 1, 100);
+  // Chocolate Wafer Texture Track
+  const roadMat = new THREE.MeshStandardMaterial({
+    color: 0xb99490, // Chocolate road
+    roughness: 0.8
+  });
+  const road = new THREE.Mesh(roadGeo, roadMat);
+  road.rotation.x = -Math.PI / 2;
+  road.position.z = 450;
+  road.receiveShadow = true;
+  scene.add(road);
+
+  // Candy cane strip curbs
+  const curbGeo = new THREE.BoxGeometry(0.8, 0.4, 1000);
+  const curbMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+  
+  const leftCurb = new THREE.Mesh(curbGeo, curbMat);
+  leftCurb.position.set(-6, 0.2, 450);
+  scene.add(leftCurb);
+
+  const rightCurb = new THREE.Mesh(curbGeo, curbMat);
+  rightCurb.position.set(6, 0.2, 450);
+  scene.add(rightCurb);
+}
+
+// Donut arches & giant lollipops along track
+function buildCandyProps() {
+  const donutGeo = new THREE.TorusGeometry(5.5, 1.2, 12, 24);
+  const donutMat = new THREE.MeshStandardMaterial({ color: 0xf5a3c7, roughness: 0.4 });
+  
+  const popStickGeo = new THREE.CylinderGeometry(0.2, 0.2, 6, 12);
+  const popHeadGeo = new THREE.SphereGeometry(1.6, 16, 16);
+  const stickMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+  const candyMats = [
+    new THREE.MeshStandardMaterial({ color: 0xafd5df, roughness: 0.2 }),
+    new THREE.MeshStandardMaterial({ color: 0xf3daa3, roughness: 0.2 }),
+    new THREE.MeshStandardMaterial({ color: 0xb9d4a9, roughness: 0.2 })
+  ];
+
+  for (let z = 40; z < 950; z += 65) {
+    // Frosted Donut Arch
+    if (z % 130 === 0) {
+      const arch = new THREE.Mesh(donutGeo, donutMat);
+      arch.position.set(0, 4.5, z);
+      scene.add(arch);
+    }
+
+    // Giant Lollipops on sides
+    const side = (z % 2 === 0 ? 1 : -1) * 8.5;
+    const lollipop = new THREE.Group();
+    const stick = new THREE.Mesh(popStickGeo, stickMat);
+    stick.position.y = 3;
+    const head = new THREE.Mesh(popHeadGeo, candyMats[Math.floor(Math.random() * candyMats.length)]);
+    head.position.y = 6;
+    lollipop.add(stick);
+    lollipop.add(head);
+    lollipop.position.set(side, 0, z);
+    scene.add(lollipop);
+  }
+}
+
+// 3D Cartoon Kart Builder
+function createKart(bodyColor, spoilerColor) {
+  const kart = new THREE.Group();
+
+  // Chassis (Wedge candy box)
+  const bodyGeo = new THREE.BoxGeometry(1.8, 0.6, 3);
+  const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, metalness: 0.2, roughness: 0.4 });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.position.y = 0.5;
+  kart.add(body);
+
+  // Engine block / spoiler
+  const spoilerGeo = new THREE.BoxGeometry(1.6, 0.15, 0.6);
+  const spoilerMat = new THREE.MeshStandardMaterial({ color: spoilerColor, roughness: 0.3 });
+  const spoiler = new THREE.Mesh(spoilerGeo, spoilerMat);
+  spoiler.position.set(0, 1.2, -1.1);
+  kart.add(spoiler);
+
+  // Candy licorice wheels
+  const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.35, 16);
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x85738e, roughness: 0.9 });
+  
+  const wheelPositions = [
+    [-1.0, 0.35, 0.9],
+    [ 1.0, 0.35, 0.9],
+    [-1.0, 0.35, -0.9],
+    [ 1.0, 0.35, -0.9]
+  ];
+
+  wheelPositions.forEach(pos => {
+    const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(...pos);
+    kart.add(wheel);
+  });
+
+  // Racer Helmet / Gummy Head
+  const headGeo = new THREE.SphereGeometry(0.42, 16, 16);
+  const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+  const head = new THREE.Mesh(headGeo, headMat);
+  head.position.set(0, 1.0, 0.1);
+  kart.add(head);
+
+  return kart;
+}
+
+function grantKartBoost(multiplier) {
+  boostTimer = Math.min(boostTimer + multiplier * 1.5, 8.0);
+  playBoostSound();
+}
+
+function onResize() {
+  const container = document.getElementById('viewport-3d');
+  if (!container || !renderer || !camera) return;
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+/* ==========================================================================
+   4. MAIN GAME LOOP
+   ========================================================================== */
+function updateRace() {
+  if (raceFinished) return;
+
+  // Base speeds & Turbo calculation
+  const isBoosting = boostTimer > 0;
+  if (isBoosting) {
+    boostTimer -= 0.02;
+    playerSpeed = 1.35; // Turbo match velocity
+  } else {
+    playerSpeed = 0.55; // Cruising velocity
+  }
+
+  // Update boost meter UI
+  const boostPercent = Math.min(100, (boostTimer / 6) * 100);
+  document.getElementById('boost-fill').style.width = boostPercent + '%';
+
+  // Advance player & rivals
+  playerProgress += playerSpeed;
+  rival1Progress += 0.62 + Math.sin(playerProgress * 0.05) * 0.08;
+  rival2Progress += 0.58 + Math.cos(playerProgress * 0.04) * 0.06;
+
+  // Update 3D Positions
+  playerKart.position.z = playerProgress;
+  playerKart.position.x = Math.sin(playerProgress * 0.08) * 0.6; // subtle kart sway
+
+  rivalKart1.position.z = rival1Progress;
+  rivalKart1.position.x = -2.2 + Math.cos(rival1Progress * 0.06) * 0.4;
+
+  rivalKart2.position.z = rival2Progress;
+  rivalKart2.position.x = 2.2 + Math.sin(rival2Progress * 0.05) * 0.4;
+
+  // Camera follows behind & above player kart
+  camera.position.x = playerKart.position.x * 0.5;
+  camera.position.y = playerKart.position.y + 3.8;
+  camera.position.z = playerKart.position.z - 7.5;
+  camera.lookAt(playerKart.position.x, playerKart.position.y + 1.2, playerKart.position.z + 10);
+
+  // Compute Ranking Position (1st, 2nd, 3rd)
+  let rank = 1;
+  if (rival1Progress > playerProgress) rank++;
+  if (rival2Progress > playerProgress) rank++;
+
+  const rankStr = rank === 1 ? '1st' : (rank === 2 ? '2nd' : '3rd');
+  document.getElementById('pos-txt').innerText = rankStr;
+
+  // Remaining Distance to Finish Line
+  const remaining = Math.max(0, Math.floor(TOTAL_RACE_DISTANCE - playerProgress));
+  document.getElementById('dist-txt').innerText = remaining + 'm';
+
+  // Finish Line Check
+  if (playerProgress >= TOTAL_RACE_DISTANCE || rival1Progress >= TOTAL_RACE_DISTANCE + 20) {
+    onRaceEnd(rank);
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  updateRace();
+  renderer.render(scene, camera);
+}
+
+function onRaceEnd(rank) {
+  raceFinished = true;
+  const finishModal = document.getElementById('finish-modal');
+  const winTitle = document.getElementById('win-title');
+  const rankCallout = document.getElementById('rank-callout');
+  const statsTxt = document.getElementById('final-stats');
+
+  if (rank === 1) {
+    winTitle.innerText = "VICTORY! 🏆";
+    rankCallout.innerText = "1st Place - Candy Grand Prix Winner!";
+  } else {
+    winTitle.innerText = "RACE COMPLETED!";
+    rankCallout.innerText = `${rank === 2 ? '2nd' : '3rd'} Place Podium!`;
+  }
+
+  statsTxt.innerHTML = `Total Candies Cleared: <b>${candiesClearedTotal}</b><br>Sugar Rush Score: <b>${score.toLocaleString()}</b>`;
+  finishModal.style.display = 'flex';
+  Arcade.earn(25);
+}
+
+function startGame() {
+  initAudio();
+  document.getElementById('start-modal').style.display = 'none';
+}
+
+function restartGame() {
+  playerProgress = 0;
+  rival1Progress = 20;
+  rival2Progress = 50;
+  boostTimer = 0;
+  score = 0;
+  candiesClearedTotal = 0;
+  raceFinished = false;
+  document.getElementById('score-txt').innerText = '0';
+  document.getElementById('finish-modal').style.display = 'none';
+  initPuzzle();
+}
+
+// Initialize Both Systems
+window.addEventListener('DOMContentLoaded', () => {
+  init3D();
+  initPuzzle();
+  animate();
+});
+</script>
+</body>
+</html>

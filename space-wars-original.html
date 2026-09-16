@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en" data-arcade-game="space-original">
+<head><script src="arcade-economy.js" data-game="space"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Neon Horizon - 3D Web Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;700&display=swap');
+
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030308;
+            font-family: 'Rajdhani', sans-serif;
+            color: #fff;
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 1;
+        }
+
+        .title-font {
+            font-family: 'Orbitron', monospace;
+        }
+
+        .neon-glow-cyan {
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.8), 0 0 20px rgba(6, 182, 212, 0.5);
+        }
+
+        .neon-glow-pink {
+            text-shadow: 0 0 10px rgba(236, 72, 153, 0.8), 0 0 20px rgba(236, 72, 153, 0.5);
+        }
+
+        .glass-panel {
+            background: rgba(10, 15, 30, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 255, 230, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        .btn-neon {
+            background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
+        }
+
+        .btn-neon:hover {
+            transform: scale(1.04);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.8);
+        }
+
+        .btn-neon:active {
+            transform: scale(0.96);
+        }
+
+        /* Screen Shake effect */
+        .shake {
+            animation: shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+            40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+    </style>
+<link rel="stylesheet" href="arcade-games.css"><script src="pet-a-duck-art.js"></script><script src="arcade-art.js"></script></head>
+<body class="relative w-full h-full">
+
+    <!-- 3D Canvas Container -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Heads-Up Display (HUD) -->
+    <div id="hud" class="absolute top-0 left-0 w-full p-4 sm:p-6 z-20 flex justify-between items-start pointer-events-none">
+        <div class="glass-panel px-5 py-3 rounded-2xl flex flex-col gap-1 border-cyan-500/30">
+            <span class="text-xs uppercase tracking-widest text-cyan-400 font-bold">Distance</span>
+            <div class="text-2xl sm:text-3xl font-black title-font tracking-wider" id="score-val">0000 m</div>
+        </div>
+
+        <div class="flex gap-3 pointer-events-auto">
+            <div class="glass-panel px-4 py-3 rounded-2xl flex items-center gap-3 border-pink-500/30">
+                <div class="w-3.5 h-3.5 rounded-full bg-pink-500 animate-ping"></div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase tracking-wider text-pink-400 font-bold">Orbs</span>
+                    <span class="text-xl sm:text-2xl font-black title-font text-pink-300" id="crystal-val">0</span>
+                </div>
+            </div>
+
+            <button id="btn-info" class="glass-panel p-3 rounded-2xl hover:border-cyan-400 text-cyan-300 transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Speed Indicator / Multiplier -->
+    <div class="absolute bottom-6 left-6 z-20 pointer-events-none hidden sm:block">
+        <div class="glass-panel px-4 py-2 rounded-xl flex items-center gap-3 border-cyan-500/20">
+            <span class="text-xs uppercase text-slate-400 font-bold tracking-wider">Velocity:</span>
+            <span class="text-cyan-400 font-mono font-bold" id="speed-indicator">100 km/h</span>
+        </div>
+    </div>
+
+    <!-- On-Screen Controls for Mobile/Touch -->
+    <div id="touch-controls" class="absolute bottom-6 inset-x-0 px-6 z-20 flex justify-between items-center pointer-events-auto md:hidden">
+        <button id="btn-left" class="glass-panel w-16 h-16 rounded-2xl flex items-center justify-center text-cyan-300 active:scale-95 border-cyan-500/40">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+        <button id="btn-boost" class="glass-panel px-6 h-14 rounded-2xl flex items-center justify-center text-xs uppercase font-bold tracking-wider text-yellow-300 border-yellow-500/40 active:scale-95">
+            Boost
+        </button>
+        <button id="btn-right" class="glass-panel w-16 h-16 rounded-2xl flex items-center justify-center text-cyan-300 active:scale-95 border-cyan-500/40">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Start Game Menu Screen -->
+    <div id="start-screen" class="absolute inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div class="glass-panel max-w-md w-full rounded-3xl p-8 text-center border-cyan-500/40">
+            <div class="inline-block px-3 py-1 mb-4 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs uppercase tracking-widest font-semibold">
+                Starlight Trail
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-black title-font tracking-wider neon-glow-cyan mb-2">Space Wars</h1>
+            <p class="text-slate-300 text-sm mb-6">Glide along the starlight trail, dodge barriers, and collect sparkling gems.</p>
+            
+            <div class="bg-slate-900/60 rounded-2xl p-4 mb-6 border border-slate-700/60 text-left text-xs space-y-2 text-slate-300">
+                <div class="flex justify-between items-center"><span class="text-cyan-400 font-bold font-mono">A / D or ◀ / ▶</span><span>Steer Craft</span></div>
+                <div class="flex justify-between items-center"><span class="text-cyan-400 font-bold font-mono">W or ▲ / Space</span><span>Boost Thrusters</span></div>
+                <div class="flex justify-between items-center"><span class="text-cyan-400 font-bold font-mono">Touch Buttons</span><span>Mobile Ready</span></div>
+            </div>
+
+            <button id="btn-start" class="btn-neon w-full py-4 rounded-2xl text-lg font-black title-font tracking-wider uppercase text-white">
+                Launch Mission
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="absolute inset-0 z-30 hidden items-center justify-center p-4 bg-red-950/70 backdrop-blur-lg">
+        <div class="glass-panel max-w-md w-full rounded-3xl p-8 text-center border-rose-500/40">
+            <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-black title-font tracking-wide neon-glow-pink mb-2">HULL DESTROYED</h2>
+            <p class="text-slate-300 text-sm mb-6">Collision detected on cyber lane sector.</p>
+
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-slate-900/80 rounded-2xl p-3 border border-slate-700/50">
+                    <div class="text-[11px] uppercase tracking-wider text-slate-400">Distance</div>
+                    <div class="text-2xl font-black title-font text-cyan-300" id="final-score">0 m</div>
+                </div>
+                <div class="bg-slate-900/80 rounded-2xl p-3 border border-slate-700/50">
+                    <div class="text-[11px] uppercase tracking-wider text-slate-400">Cores Collected</div>
+                    <div class="text-2xl font-black title-font text-pink-400" id="final-crystals">0</div>
+                </div>
+            </div>
+
+            <button id="btn-restart" class="btn-neon w-full py-4 rounded-2xl text-lg font-black title-font tracking-wider uppercase text-white">
+                Reboot System
+            </button>
+        </div>
+    </div>
+
+    <!-- Explanatory Technical Modal -->
+    <div id="info-modal" class="absolute inset-0 z-40 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="glass-panel max-w-lg w-full rounded-3xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto border-cyan-500/30">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold title-font text-cyan-400">How 3D Games Work in HTML</h3>
+                <button id="btn-close-info" class="text-slate-400 hover:text-white p-2 text-xl font-bold">&times;</button>
+            </div>
+            
+            <div class="text-sm text-slate-300 space-y-4 leading-relaxed">
+                <p>
+                    Modern 3D browser games do not require plugins like Flash or Unity Web Player. They execute directly via web standards:
+                </p>
+                <div class="space-y-3">
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                        <strong class="text-cyan-300 block mb-1">1. The HTML5 &lt;canvas&gt; Element</strong>
+                        The canvas is an empty visual raster surface embedded in the web page.
+                    </div>
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                        <strong class="text-cyan-300 block mb-1">2. WebGL (Web Graphics Library)</strong>
+                        A JavaScript API that gives the browser direct access to your device's <strong>GPU</strong> for hardware-accelerated matrix transforms and pixel/vertex shaders.
+                    </div>
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                        <strong class="text-cyan-300 block mb-1">3. Three.js Engine</strong>
+                        Writing raw WebGL requires hundreds of lines of shader code. Three.js wraps WebGL into an intuitive Scene Graph:
+                        <code class="block text-xs font-mono text-pink-300 mt-1">Scene ➔ Camera ➔ Meshes (Geometry + Material) ➔ Lights ➔ Renderer</code>
+                    </div>
+                    <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                        <strong class="text-cyan-300 block mb-1">4. requestAnimationFrame Game Loop</strong>
+                        Renders 60 to 120 frames per second smoothly, calculating delta time, physics, collision detection, and procedural scenery generation.
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-modal-gotit" class="mt-6 w-full py-3 bg-cyan-600/80 hover:bg-cyan-500 rounded-xl font-bold text-sm tracking-wider uppercase text-white transition-all">
+                Close & Return
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* Lightweight Web Audio Synthesizer for self-contained SFX without external audio URLs */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playCollect() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                const now = this.ctx.currentTime;
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.16);
+            }
+
+            playCrash() {
+                if (!this.ctx) return;
+                const bufferSize = this.ctx.sampleRate * 0.4;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.35);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.6, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            }
+
+            playEngineHum(speedRatio) {
+                // Pitch variation could be hooked here
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        const canvas = document.getElementById('game-canvas');
+        let renderer, scene, camera;
+        let playerShip, engineLight;
+        let trackSegments = [];
+        let obstacles = [];
+        let crystals = [];
+        let particles = [];
+        
+        // Game parameters
+        const TRACK_WIDTH = 12;
+        const SEGMENT_LENGTH = 50;
+        const NUM_SEGMENTS = 6;
+        let isPlaying = false;
+        let score = 0;
+        let crystalCount = 0;
+        let baseSpeed = 42;
+        let speed = baseSpeed;
+        let targetSpeed = baseSpeed;
+        let shipX = 0;
+        let shipTargetX = 0;
+        let tilt = 0;
+        let clock = new THREE.Clock();
+        
+        // Input state
+        const keys = { left: false, right: false, boost: false };
+
+        function init3D() {
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                antialias: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Scene & Fog
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xc9c1e4);
+            scene.fog = new THREE.FogExp2(0xc9c1e4, 0.018);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 300);
+            camera.position.set(0, 3.8, 6.5);
+            camera.lookAt(0, 1.2, -10);
+
+            // Lighting setup
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+
+            const sunLight = new THREE.DirectionalLight(0xb2d9e3, 1.2);
+            sunLight.position.set(10, 30, -20);
+            scene.add(sunLight);
+
+            const hemiLight = new THREE.HemisphereLight(0xe0f0ee, 0xcba8c9, 0.4);
+            scene.add(hemiLight);
+
+            buildPlayerShip();
+            buildTrack();
+            createStarfield();
+
+            window.addEventListener('resize', onWindowResize);
+            setupControls();
+        }
+
+        function buildPlayerShip() {
+            playerShip = new THREE.Group();
+
+            // Cockpit / Body
+            const bodyGeo = new THREE.ConeGeometry(0.7, 2.2, 5);
+            bodyGeo.rotateX(-Math.PI / 2);
+            const bodyMat = new THREE.MeshStandardMaterial({
+                color: 0xf6e8da,
+                metalness: 0.9,
+                roughness: 0.2,
+                emissive: 0x8caac0,
+                emissiveIntensity: 0.15
+            });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.castShadow = true;
+            playerShip.add(body);
+
+            // Left & Right Wings
+            const wingShape = new THREE.BufferGeometry();
+            const wingVertices = new Float32Array([
+                0, 0, 0.5,
+                -1.8, 0, -0.4,
+                0, 0, -0.8,
+                
+                0, 0, 0.5,
+                1.8, 0, -0.4,
+                0, 0, -0.8
+            ]);
+            wingShape.setAttribute('position', new THREE.BufferAttribute(wingVertices, 3));
+            wingShape.computeVertexNormals();
+
+            const wingMat = new THREE.MeshStandardMaterial({
+                color: 0xc7b2cf,
+                metalness: 0.7,
+                roughness: 0.3,
+                side: THREE.DoubleSide
+            });
+            const wings = new THREE.Mesh(wingShape, wingMat);
+            playerShip.add(wings);
+
+            // Wing Neon Edges
+            const wingEdgeMat = new THREE.MeshBasicMaterial({ color: 0xe2e9d3 });
+            const edgeGeo = new THREE.BoxGeometry(0.08, 0.08, 1.2);
+            
+            const leftEdge = new THREE.Mesh(edgeGeo, wingEdgeMat);
+            leftEdge.position.set(-1.2, 0.05, -0.1);
+            leftEdge.rotation.y = 0.5;
+            playerShip.add(leftEdge);
+
+            const rightEdge = new THREE.Mesh(edgeGeo, wingEdgeMat);
+            rightEdge.position.set(1.2, 0.05, -0.1);
+            rightEdge.rotation.y = -0.5;
+            playerShip.add(rightEdge);
+
+            // Thruster Glow Engine
+            const thrusterGeo = new THREE.CylinderGeometry(0.2, 0.05, 0.6, 12);
+            thrusterGeo.rotateX(Math.PI / 2);
+            const thrusterMat = new THREE.MeshBasicMaterial({ color: 0xe9c7ac });
+            const thruster = new THREE.Mesh(thrusterGeo, thrusterMat);
+            thruster.position.set(0, 0, 1.0);
+            playerShip.add(thruster);
+
+            // Engine point light
+            engineLight = new THREE.PointLight(0xe2e9d3, 2, 8);
+            engineLight.position.set(0, 0.2, 1.3);
+            playerShip.add(engineLight);
+
+            playerShip.position.set(0, 0.9, 0);
+            scene.add(playerShip);
+        }
+
+        function createStarfield() {
+            const count = 700;
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+            for (let i = 0; i < count * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 250;
+                positions[i + 1] = Math.random() * 80 + 5;
+                positions[i + 2] = (Math.random() - 0.5) * 350;
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const mat = new THREE.PointsMaterial({
+                color: 0xe9c7ac,
+                size: 0.6,
+                transparent: true,
+                opacity: 0.8
+            });
+            const starPoints = new THREE.Points(geo, mat);
+            scene.add(starPoints);
+        }
+
+        function createTrackSegment(zPos) {
+            const group = new THREE.Group();
+            group.position.z = zPos;
+
+            // Main Floor Road
+            const roadGeo = new THREE.PlaneGeometry(TRACK_WIDTH, SEGMENT_LENGTH, 10, 10);
+            roadGeo.rotateX(-Math.PI / 2);
+            const roadMat = new THREE.MeshStandardMaterial({
+                color: 0xc2b4d8,
+                metalness: 0.9,
+                roughness: 0.2,
+            });
+            const road = new THREE.Mesh(roadGeo, roadMat);
+            road.receiveShadow = true;
+            group.add(road);
+
+            // Glowing Edge Rails
+            const railGeo = new THREE.BoxGeometry(0.25, 0.5, SEGMENT_LENGTH);
+            const railMat = new THREE.MeshStandardMaterial({
+                color: 0xf3e5cb,
+                emissive: 0xf3e5cb,
+                emissiveIntensity: 1.2
+            });
+
+            const leftRail = new THREE.Mesh(railGeo, railMat);
+            leftRail.position.set(-TRACK_WIDTH / 2, 0.25, 0);
+            group.add(leftRail);
+
+            const rightRail = new THREE.Mesh(railGeo, railMat);
+            rightRail.position.set(TRACK_WIDTH / 2, 0.25, 0);
+            group.add(rightRail);
+
+            // Center Neon Grid Lane Markings
+            const gridGeo = new THREE.PlaneGeometry(0.15, SEGMENT_LENGTH);
+            gridGeo.rotateX(-Math.PI / 2);
+            const gridMat = new THREE.MeshBasicMaterial({ color: 0xcba8c9 });
+            const gridLine = new THREE.Mesh(gridGeo, gridMat);
+            gridLine.position.y = 0.02;
+            group.add(gridLine);
+
+            scene.add(group);
+            return group;
+        }
+
+        function buildTrack() {
+            for (let i = 0; i < NUM_SEGMENTS; i++) {
+                const segment = createTrackSegment(-i * SEGMENT_LENGTH);
+                trackSegments.push(segment);
+            }
+        }
+
+        function spawnObstacle(zDistance) {
+            // Pick lane: left (-3.5), middle (0), right (3.5)
+            const lanes = [-3.6, 0, 3.6];
+            const lane = lanes[Math.floor(Math.random() * lanes.length)];
+
+            // Barrier mesh
+            const geo = new THREE.BoxGeometry(2.4, 1.4, 0.8);
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0xaa92b5,
+                emissive: 0xcda0ad,
+                emissiveIntensity: 1.0,
+                metalness: 0.6,
+                roughness: 0.3
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(lane, 0.7, zDistance);
+            mesh.castShadow = true;
+
+            // Pulsing hazard outline
+            const wireGeo = new THREE.EdgesGeometry(geo);
+            const wireMat = new THREE.LineBasicMaterial({ color: 0xd5a1be, linewidth: 2 });
+            const outline = new THREE.LineSegments(wireGeo, wireMat);
+            mesh.add(outline);
+
+            scene.add(mesh);
+            obstacles.push(mesh);
+        }
+
+        function spawnCrystal(zDistance) {
+            const lanes = [-3.6, -1.8, 0, 1.8, 3.6];
+            const lane = lanes[Math.floor(Math.random() * lanes.length)];
+
+            // Glowing Octahedron Diamond
+            const geo = new THREE.OctahedronGeometry(0.5, 0);
+            const mat = new THREE.MeshStandardMaterial({
+                color: 0xb5dce3,
+                emissive: 0xb2d9e3,
+                emissiveIntensity: 1.5,
+                metalness: 0.2,
+                roughness: 0.1
+            });
+            const gem = new THREE.Mesh(geo, mat);
+            gem.position.set(lane, 0.9, zDistance);
+
+            scene.add(gem);
+            crystals.push(gem);
+        }
+
+        function createExplosion(x, y, z, colorHex) {
+            const pCount = 35;
+            for (let i = 0; i < pCount; i++) {
+                const pGeo = new THREE.SphereGeometry(Math.random() * 0.12 + 0.05, 6, 6);
+                const pMat = new THREE.MeshBasicMaterial({ color: colorHex });
+                const particle = new THREE.Mesh(pGeo, pMat);
+                particle.position.set(x, y, z);
+                
+                // Velocity
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 12 + 2;
+                particle.userData = {
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed * 0.8 + 2,
+                    vz: (Math.random() - 0.5) * speed,
+                    life: 1.0,
+                    decay: Math.random() * 2.0 + 1.5
+                };
+                scene.add(particle);
+                particles.push(particle);
+            }
+        }
+
+        function setupControls() {
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+                if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+                if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.boost = true;
+            });
+
+            window.addEventListener('keyup', (e) => {
+                if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+                if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+                if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') keys.boost = false;
+            });
+
+            // Touch UI Listeners
+            const btnLeft = document.getElementById('btn-left');
+            const btnRight = document.getElementById('btn-right');
+            const btnBoost = document.getElementById('btn-boost');
+
+            const bindTouch = (elem, keyName) => {
+                elem.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; });
+                elem.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; });
+                elem.addEventListener('mousedown', () => { keys[keyName] = true; });
+                elem.addEventListener('mouseup', () => { keys[keyName] = false; });
+            };
+
+            bindTouch(btnLeft, 'left');
+            bindTouch(btnRight, 'right');
+            bindTouch(btnBoost, 'boost');
+
+            // Button Click Handlers
+            document.getElementById('btn-start').addEventListener('click', startGame);
+            document.getElementById('btn-restart').addEventListener('click', startGame);
+            
+            // Info Modal
+            const modal = document.getElementById('info-modal');
+            document.getElementById('btn-info').addEventListener('click', () => {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            });
+            const closeModal = () => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            };
+            document.getElementById('btn-close-info').addEventListener('click', closeModal);
+            document.getElementById('btn-modal-gotit').addEventListener('click', closeModal);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function startGame() {
+            sound.init();
+            // Reset state
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            document.getElementById('game-over-screen').classList.remove('flex');
+
+            // Clear entities
+            obstacles.forEach(o => scene.remove(o));
+            crystals.forEach(c => scene.remove(c));
+            particles.forEach(p => scene.remove(p));
+            obstacles = [];
+            crystals = [];
+            particles = [];
+
+            // Reset positioning
+            score = 0;
+            crystalCount = 0;
+            document.getElementById('crystal-val').innerText = crystalCount;
+            shipX = 0;
+            shipTargetX = 0;
+            playerShip.position.set(0, 0.9, 0);
+            playerShip.rotation.set(0, 0, 0);
+
+            // Populate initial track objects
+            for (let z = -40; z > -250; z -= 35) {
+                if (Math.random() > 0.3) spawnObstacle(z);
+                if (Math.random() > 0.4) spawnCrystal(z - 15);
+            }
+
+            clock.start();
+            isPlaying = true;
+        }
+
+        function triggerGameOver() {
+            isPlaying = false;
+            sound.playCrash();
+            createExplosion(playerShip.position.x, playerShip.position.y, playerShip.position.z, 0xd5a1be);
+            
+            // Screen shake
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 400);
+
+            Arcade.earn(Math.max(1, Math.floor(score / 100)));
+            document.getElementById('final-score').innerText = `${Math.floor(score)} m`;
+            document.getElementById('final-crystals').innerText = crystalCount;
+            
+            setTimeout(() => {
+                document.getElementById('game-over-screen').classList.remove('hidden');
+                document.getElementById('game-over-screen').classList.add('flex');
+            }, 600);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(clock.getDelta(), 0.1);
+
+            if (isPlaying) {
+                // Handling Boost and Steering
+                targetSpeed = keys.boost ? baseSpeed * 1.6 : baseSpeed;
+                speed += (targetSpeed - speed) * 4 * dt;
+                
+                const moveDist = speed * dt;
+                score += moveDist * 0.4;
+                document.getElementById('score-val').innerText = `${Math.floor(score).toString().padStart(4, '0')} m`;
+                document.getElementById('speed-indicator').innerText = `${Math.floor(speed * 2.6)} km/h`;
+
+                const steerRate = 18;
+                if (keys.left) shipTargetX -= steerRate * dt;
+                if (keys.right) shipTargetX += steerRate * dt;
+
+                // Restrict ship to track bounds
+                const limit = (TRACK_WIDTH / 2) - 1.2;
+                shipTargetX = Math.max(-limit, Math.min(limit, shipTargetX));
+                shipX += (shipTargetX - shipX) * 12 * dt;
+                playerShip.position.x = shipX;
+
+                // Ship tilt rotation
+                const targetTilt = (shipTargetX - shipX) * 0.25;
+                tilt += (targetTilt - tilt) * 10 * dt;
+                playerShip.rotation.z = -tilt;
+                playerShip.rotation.y = -tilt * 0.4;
+
+                // Gentle hovering oscillation
+                playerShip.position.y = 0.9 + Math.sin(clock.getElapsedTime() * 8) * 0.08;
+
+                // Camera follow smoothing with slight dynamic FOV zoom
+                camera.position.x += (shipX * 0.4 - camera.position.x) * 6 * dt;
+                camera.fov = THREE.MathUtils.lerp(camera.fov, keys.boost ? 75 : 65, 4 * dt);
+                camera.updateProjectionMatrix();
+
+                // Dynamic Thruster light intensity
+                engineLight.intensity = keys.boost ? 4.5 : 2.0;
+
+                // Track Segments Recycle Logic (Endless illusion)
+                trackSegments.forEach(segment => {
+                    segment.position.z += moveDist;
+                    if (segment.position.z > SEGMENT_LENGTH) {
+                        segment.position.z -= NUM_SEGMENTS * SEGMENT_LENGTH;
+                    }
+                });
+
+                // Move and Check Obstacles
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obs = obstacles[i];
+                    obs.position.z += moveDist;
+
+                    // AABB / Distance collision check
+                    const dx = Math.abs(obs.position.x - playerShip.position.x);
+                    const dz = Math.abs(obs.position.z - playerShip.position.z);
+                    if (dx < 1.6 && dz < 1.2) {
+                        triggerGameOver();
+                        break;
+                    }
+
+                    // Recycle passed obstacles
+                    if (obs.position.z > 15) {
+                        scene.remove(obs);
+                        obstacles.splice(i, 1);
+                        spawnObstacle(-240 - Math.random() * 30);
+                    }
+                }
+
+                // Move and Check Collectible Crystals
+                for (let i = crystals.length - 1; i >= 0; i--) {
+                    const gem = crystals[i];
+                    gem.position.z += moveDist;
+                    gem.rotation.y += 3 * dt;
+                    gem.rotation.x += 1.5 * dt;
+
+                    // Collection check
+                    const dx = Math.abs(gem.position.x - playerShip.position.x);
+                    const dz = Math.abs(gem.position.z - playerShip.position.z);
+                    if (dx < 1.5 && dz < 1.3) {
+                        sound.playCollect();
+                        createExplosion(gem.position.x, gem.position.y, gem.position.z, 0xb5dce3);
+                        crystalCount++;
+                        document.getElementById('crystal-val').innerText = crystalCount;
+                        scene.remove(gem);
+                        crystals.splice(i, 1);
+                        spawnCrystal(-230 - Math.random() * 40);
+                        continue;
+                    }
+
+                    if (gem.position.z > 15) {
+                        scene.remove(gem);
+                        crystals.splice(i, 1);
+                        spawnCrystal(-230 - Math.random() * 40);
+                    }
+                }
+            }
+
+            // Update Particle Physics
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.position.x += p.userData.vx * dt;
+                p.position.y += p.userData.vy * dt;
+                p.position.z += p.userData.vz * dt;
+                p.userData.life -= p.userData.decay * dt;
+                p.scale.setScalar(Math.max(0.01, p.userData.life));
+
+                if (p.userData.life <= 0) {
+                    scene.remove(p);
+                    particles.splice(i, 1);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize and start animation loop on page load
+        window.onload = function() {
+            init3D();
+            animate();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600">
+ <defs>
+  <linearGradient id="shade" x2="0" y2="1"><stop stop-color="#fff"/><stop offset=".55" stop-color="#f9fdff"/><stop offset="1" stop-color="#c4e4f4"/></linearGradient>
+  <radialGradient id="light" cx=".4" cy=".2" r=".8"><stop stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+  <filter id="soft" x="-10%" y="-20%" width="120%" height="150%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#509cc7" flood-opacity=".18"/></filter>
+  <g id="cloud" filter="url(#soft)">
+   <path d="M30 106C6 104 0 79 18 65C26 59 34 58 43 60C39 35 61 17 83 26C93-5 143-5 156 26C181 12 209 29 207 52C229 48 246 62 243 80C268 83 267 105 240 110C178 120 81 118 30 106Z" fill="url(#shade)"/>
+   <ellipse cx="112" cy="39" rx="44" ry="30" fill="url(#light)"/>
+   <ellipse cx="65" cy="62" rx="31" ry="25" fill="url(#light)"/>
+   <ellipse cx="180" cy="56" rx="33" ry="25" fill="url(#light)"/>
+   <path d="M29 88Q61 105 93 95M110 99Q150 108 185 97M193 88Q221 96 240 86" fill="none" stroke="#b9ddea" stroke-opacity=".35" stroke-width="4" stroke-linecap="round"/>
+  </g>
+ </defs>
+ <use href="#cloud" transform="translate(25 45) scale(.95)"/>
+ <use href="#cloud" transform="translate(700 80) scale(1.05)"/>
+ <use href="#cloud" transform="translate(370 15) scale(.48)" opacity=".7"/>
+ <use href="#cloud" transform="translate(470 260) scale(.65)" opacity=".8"/>
+ <use href="#cloud" transform="translate(-70 290) scale(.8)"/>
+</svg>

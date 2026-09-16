@@ -1,0 +1,262 @@
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    /* The game artwork is portrait (450 × 800). Keep that proportion instead of stretching it on desktop. */
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: radial-gradient(circle, #e0f2fe 0%, #bae6fd 100%);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    touch-action: manipulation;
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Outer game shell scaled to fit mobile screens dynamically */
+#gameWrapper {
+    position: relative;
+    width: min(100vw, 56.25vh);
+    height: auto;
+    aspect-ratio: 9 / 16;
+    max-width: none;
+    max-height: none;
+    background: #e0f2fe;
+    border: 5px solid #0f172a;
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.35);
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 451px) { #gameWrapper { border-radius: 18px; } }
+
+canvas {
+    position: absolute;
+    top: 125px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 200px);
+    display: block;
+    cursor: pointer;
+    background: transparent;
+    overflow: hidden;
+}
+
+#topStats {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 125px;
+    background: #38bdf8;
+    border-bottom: 3px solid #0284c7;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 30;
+}
+
+#topBarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.header-btn {
+    background: #ffffff;
+    border: 2px solid #0f172a;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 12px;
+    cursor: pointer;
+    color: #0f172a;
+}
+
+#coinDisplay {
+    font-weight: 900;
+    color: #facc15;
+    font-size: 14px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 2px;
+}
+
+.stat-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.stat-bar-fill {
+    height: 100%;
+    width: 100%;
+    transition: width 0.25s ease-out;
+    border-radius: 4px;
+}
+
+#barHunger { background: #f59e0b; }
+#barClean { background: #0284c7; }
+#barEnergy { background: #8b5cf6; }
+
+.stat-badge {
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    min-width: 65px;
+}
+
+#gamesDropdown {
+    position: absolute;
+    top: 130px;
+    left: 80px;
+    width: 160px;
+    background: #ffffff;
+    border: 3px solid #0f172a;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    z-index: 40;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+.dropdown-game-btn {
+    background: #fbcfe8;
+    border: 2px solid #0f172a;
+    padding: 6px;
+    font-weight: 800;
+    font-size: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.dropdown-game-btn:hover { 
+    background: #f472b6; 
+    color: #fff; 
+}
+
+#uiControlPanel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 75px;
+    background: #e0f2fe;
+    border-top: 3px solid #0f172a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    z-index: 30;
+}
+
+.btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+}
+
+button.game-btn {
+    flex: 1;
+    padding: 8px 2px;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 8px;
+    border: 2px solid #0f172a;
+    cursor: pointer;
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 3px 0 #0f172a;
+    transition: all 0.05s ease;
+    text-align: center;
+}
+
+button.game-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #0f172a;
+}
+
+#vipSuccessToast { position: fixed; bottom: 24px; left: 50%; z-index: 60; width: min(90%, 360px); padding: 13px; transform: translate(-50%, 120px); transition: transform .25s; border-radius: 12px; background: #166534; color: white; text-align: center; font-weight: 800; } #vipSuccessToast.show { transform: translate(-50%, 0); }
+
+/* Sky Arcade skin — presentation only; the canvas game and controls are unchanged. */
+html, body {
+    background:
+        radial-gradient(ellipse 74px 28px at 12% 15%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 44px 34px at 17% 11%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 72px 27px at 84% 31%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 43px 34px at 89% 26%, #fff 0 58%, transparent 60%),
+        linear-gradient(#91ddfa 0 66%, #9bdc88 66%);
+}
+
+#gameWrapper {
+    background: #dff6ff;
+    border: 6px solid #fff;
+    border-radius: 28px;
+    box-shadow: 0 9px 0 #318fc1, 0 22px 42px rgba(21, 81, 113, .4);
+}
+
+#topStats {
+    background: linear-gradient(180deg, #65c8ef, #4bb7e7);
+    border-bottom: 4px solid #3398c9;
+    padding: 10px 14px;
+}
+
+.header-btn {
+    border: 3px solid #fff;
+    border-radius: 12px;
+    background: #fff4a9;
+    color: #895400;
+    box-shadow: 0 3px #d49b20;
+    text-shadow: none;
+}
+.header-btn:last-of-type { background: #e9d4ff; color: #71528f; box-shadow: 0 3px #aa8cc7; }
+#coinDisplay { color: #875300; background: #fff29d; border: 3px solid #e7a720; border-radius: 999px; padding: 4px 9px; text-shadow: none; box-shadow: 0 3px #cc8b11; }
+.stat-bar-bg { background: rgba(255,255,255,.48); border: 2px solid rgba(255,255,255,.85); height: 9px; }
+#barHunger { background: #ffb347; } #barClean { background: #68c5f0; } #barEnergy { background: #c3a6ff; }
+.stat-badge { color: #fff; text-shadow: 0 2px #2c8eb9; }
+
+#gamesDropdown { border: 4px solid #fff; border-radius: 16px; background: #eaf8ff; box-shadow: 0 6px #318fc1, 0 14px 22px rgba(21,81,113,.3); }
+.dropdown-game-btn { border: 2px solid #fff; border-radius: 10px; background: #ffc9de; color: #8d4f68; box-shadow: 0 2px #dc8eae; }
+.dropdown-game-btn:hover { background: #f5a7c7; color: #71415b; }
+
+#uiControlPanel { background: #e6f8ff; border-top: 4px solid #fff; }
+button.game-btn { border: 3px solid #fff; border-radius: 12px; color: #376884; box-shadow: 0 3px #8bc7e4; }
+button.btn-room { background: #fff2a7; } button.btn-bath { background: #bdeaff; }
+button.btn-garden { background: #c8f1ce; } button.btn-closet { background: #ead4ff; }
+button.btn-store { background: #ffd0dd; } button.btn-kitchen { background: #ffd9aa; }
+button.game-btn:active { box-shadow: 0 1px #8bc7e4; }
+
+#vipSuccessToast { background: #59b97b; border: 3px solid #fff; box-shadow: 0 4px #2b8752; }
+
+/* Soft toy materials, warm highlights, and the arcade's layered sky. */
+html, body { background: url('detailed-clouds.svg') center top / cover no-repeat, linear-gradient(#91ddfa 0 66%, #9bdc88 66%); }
+#barHunger { background: linear-gradient(#ffe4a1, #f3ac67); }
+#barClean { background: linear-gradient(#bbf3ff, #68bde0); }
+#barEnergy { background: linear-gradient(#e8d9ff, #b197db); }
+button.game-btn { background-image: linear-gradient(#ffffff65, #ffffff00); }
+#uiControlPanel { background: linear-gradient(#f4fbff, #d7ebf3); }
+#gameCanvas { background: #e9dff0; }

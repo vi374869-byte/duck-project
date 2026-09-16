@@ -1,0 +1,124 @@
+/* Sky Arcade: warm paper, soft toy shapes, illustrated skies. */
+:root { --arcade-ink:#625274; --arcade-muted:#80728b; --arcade-paper:#fffaf1; --arcade-accent:#b3a0d1; }
+html[data-arcade-game] { background:#c2e8f2; }
+html[data-arcade-game] body { color:var(--arcade-ink);font-family:'Trebuchet MS',system-ui,sans-serif;background:url('detailed-clouds.svg') center top / cover no-repeat,linear-gradient(#b0e1f0,#e3efd7); }
+html[data-arcade-game] button,html[data-arcade-game] input { font-family:inherit; }
+html[data-arcade-game] button:not(.swatch):not(.thumb-card):not(.brand) { border:2px solid #fffaf3;border-radius:14px;background:linear-gradient(#fff5d5,#edd5b2);color:#725773;box-shadow:0 4px #b9a4bb,0 7px 14px #7c6f8820;text-shadow:none; }
+html[data-arcade-game] button:focus-visible { outline:3px solid #7f76b6;outline-offset:3px; }
+html[data-arcade-game] button:active { transform:translateY(2px); }
+html[data-arcade-game] button:disabled { opacity:.5; }
+html[data-arcade-game] input:not([type=range]) { color:#695974;background:#fffdf4;border:2px solid #d4c4dc;border-radius:12px; }
+html[data-arcade-game] input[type=range] { accent-color:#a88bc5; }
+html[data-arcade-game] header,html[data-arcade-game] footer { color:#655579;background:linear-gradient(#fdf5ed,#e1d8ed);border-color:#fff9f0; }
+html[data-arcade-game] h1,html[data-arcade-game] h2 { color:#776089;text-shadow:0 2px #fffaf2;letter-spacing:-.035em;font-family:'Trebuchet MS',system-ui,sans-serif; }
+html[data-arcade-game] .overlay,html[data-arcade-game] .intro,html[data-arcade-game] .modal-overlay { background:#877eaa60;backdrop-filter:blur(5px);color:#655579; }
+html[data-arcade-game] .panel,html[data-arcade-game] .intro>div,html[data-arcade-game] .overlay>div { border:4px solid #fffaf2;border-radius:28px;background:linear-gradient(150deg,#fffaf1,#ede1f1);box-shadow:0 8px #c2aecb,0 18px 44px #80678230;color:#695775; }
+html[data-arcade-game] .panel p,html[data-arcade-game] .modal-overlay p,html[data-arcade-game] .help { color:#81718a; }
+.arcade-menu-logo { display:block;width:92px;height:92px;object-fit:contain;margin:0 auto 10px; }
+.arcade-inline-logo { display:inline-block;width:38px;height:38px;object-fit:contain;vertical-align:middle;margin-right:8px; }
+html[data-arcade-game] .pill,html[data-arcade-game] .tag { background:#fff8e4;color:#7a6380;border:2px solid #fffdf2;border-radius:12px; }
+html[data-arcade-game] .game { background:#e4e7ed;border:5px solid #fffcf4;border-radius:24px;box-shadow:0 8px #aac5d3;padding-bottom:50px; }
+html[data-arcade-game] .arena { border:4px solid #fff9ed;box-shadow:0 4px #b9b6cf;background:#d4e6df; }
+html[data-arcade-game='space'] main,html[data-arcade-game='third'] main { background:#dbd0e6;grid-template-rows:68px minmax(0,1fr) 92px; }
+html[data-arcade-game='third'] header,html[data-arcade-game='third'] footer { background:linear-gradient(#ffe4e8,#ecc4d8); }
+html[data-arcade-game='space'] .panel h1,html[data-arcade-game='third'] .panel h1 { font:900 clamp(2rem,6vw,3rem)/1 'Trebuchet MS',sans-serif; }
+html[data-arcade-game='space'] footer,html[data-arcade-game='third'] footer { padding-bottom:34px; }
+/* Island game: etched sand tiles and glossy carved tokens. */
+html[data-arcade-game='tiki'] { --sun-color:#ae7644;--sun-glow:#eecb8f;--moon-color:#7878ad;--moon-glow:#b9cde9; }
+html[data-arcade-game='tiki'] body { padding:14px 14px 58px;gap:14px; }
+html[data-arcade-game='tiki'] header { background:none; }
+html[data-arcade-game='tiki'] h1 { font-size:2rem; }
+html[data-arcade-game='tiki'] #turn-indicator { color:#6f6682;background:#fff9e4;border:2px solid #fffdf4;box-shadow:0 3px #b2c8bc;padding:7px 18px; }
+html[data-arcade-game='tiki'] .players-bar { max-width:480px;gap:14px; }
+html[data-arcade-game='tiki'] .player-box { background:#fff9ed;border:3px solid #fff;box-shadow:0 4px #c3b5bf;border-radius:17px; }
+html[data-arcade-game='tiki'] .player-box.active { box-shadow:0 4px #b9a5c8,0 0 0 3px #fff8e0; }
+html[data-arcade-game='tiki'] #board-container { background:repeating-linear-gradient(8deg,#e8c8a2 0 8px,#ebcfaf 9px 11px);border:6px solid #fff6df;box-shadow:0 9px #c4a58e,0 18px 24px #698e9935; }
+html[data-arcade-game='tiki'] .cell { background:radial-gradient(#c2a88955 1px,transparent 1.5px) 0 0/12px 12px,linear-gradient(#fff2d5,#e7cbaa);border:2px solid #fff3d5;box-shadow:inset 0 3px 6px #a3896b20; }
+html[data-arcade-game='tiki'] .cell:hover { background:#fff5dd; }
+html[data-arcade-game='tiki'] .tiki-piece { border:4px solid #fff9e9;border-radius:38%;box-shadow:0 5px #a98d9355,inset 0 4px #ffffff75; }
+html[data-arcade-game='tiki'] .tiki-piece.sun { background:radial-gradient(ellipse at 30% 15%,#fff6cf,transparent 60%),linear-gradient(#f4d393,#e1aa7d); }
+html[data-arcade-game='tiki'] .tiki-piece.moon { background:radial-gradient(ellipse at 30% 15%,#edfcff,transparent 60%),linear-gradient(#bcdde3,#aba4d0); }
+html[data-arcade-game='tiki'] .modal-overlay { background:linear-gradient(#daf0e8ee,#e8dbebee); }
+/* Music room: paper keys, candy notes, and warm lavender panels. */
+html[data-arcade-game='rhythm'] * { font-family:'Trebuchet MS',system-ui,sans-serif; }
+html[data-arcade-game='rhythm'] #game-container { background:#e6daee;box-shadow:0 0 0 5px #fff7ee; }
+html[data-arcade-game='rhythm'] #hud { color:#695676;background:linear-gradient(#fff8ef,#ebe0f0);border-bottom:3px solid #fffdf5; }
+html[data-arcade-game='rhythm'] #hud span,html[data-arcade-game='rhythm'] #combo-label { color:#6b587b;text-shadow:none; }
+html[data-arcade-game='rhythm'] #life-bar-bg { background:#dcd2e2;border-color:#fff; }
+html[data-arcade-game='rhythm'] #life-bar-fill { background:linear-gradient(90deg,#b5cfa9,#83b7a2); }
+html[data-arcade-game='rhythm'] .screen { background:radial-gradient(#ffffff90 1px,transparent 1.5px) 0 0/18px 18px,linear-gradient(#eee0f5,#e4edf5);padding:22px 28px 60px;overflow:auto;justify-content:flex-start; }
+html[data-arcade-game='rhythm'] .screen.hidden { display:none; }
+html[data-arcade-game='rhythm'] .arcade-menu-logo { width:78px;height:78px;flex-shrink:0; }
+html[data-arcade-game='rhythm'] .glitch-title { color:#876899;text-shadow:0 3px #fffcf0;font-size:2.2rem; }
+html[data-arcade-game='rhythm'] .subtitle { letter-spacing:.06em;color:#8c7796;margin-bottom:18px; }
+html[data-arcade-game='rhythm'] .song-card,html[data-arcade-game='rhythm'] .result-stats { background:#fffbf0;border:3px solid #fff;border-radius:18px;box-shadow:0 4px #c9b7d4; }
+html[data-arcade-game='rhythm'] .song-title,html[data-arcade-game='rhythm'] .song-artist,html[data-arcade-game='rhythm'] .settings-strip,html[data-arcade-game='rhythm'] .keybind-hint { color:#756180; }
+html[data-arcade-game='rhythm'] button.active { background:linear-gradient(#e8d5f6,#ccb1df);color:#654b7a;border-color:#fff;box-shadow:0 3px #a58abb; }
+html[data-arcade-game='rhythm'] button.btn-diff.active,html[data-arcade-game='rhythm'] button.btn-level.active { background:linear-gradient(#e8d5f6,#ccb1df)!important;color:#654b7a;outline:2px solid #b49ac8;outline-offset:1px; }
+html[data-arcade-game='rhythm'] .btn-cta { font-size:16px;padding:14px 25px;min-height:46px;flex-shrink:0; }
+html[data-arcade-game='rhythm'] #judgement-display { text-shadow:0 2px #fffaf0,0 0 8px #fff; }
+html[data-arcade-game='rhythm'] #combo-counter { color:#836793;text-shadow:0 2px #fff; }
+html[data-arcade-game='rhythm'] .stat-row { color:#75617d; }
+/* Tycoon workbench. */
+html[data-arcade-game='six'] canvas { background:#b9ddea;box-shadow:none;border-radius:24px; }
+html[data-arcade-game='six'] .hud-badge { background:linear-gradient(#fffaf0,#f0e5d4);border:3px solid #fff;border-radius:16px;box-shadow:0 4px #b5b9c4; }
+html[data-arcade-game='six'] .hud-label { color:#8a7887; }
+html[data-arcade-game='six'] .hud-val { color:#6f698d;text-shadow:none;font-family:inherit; }
+html[data-arcade-game='six'] #level-objective,html[data-arcade-game='six'] #controls-hint,html[data-arcade-game='six'] #notify { background:#fffaebef;color:#7b6880;border:2px solid #fff;box-shadow:0 3px #a4bfbe33; }
+html[data-arcade-game='six'] #controls-hint { bottom:58px; }
+html[data-arcade-game='six'] #notify { top:122px; }
+html[data-arcade-game='six'] #quit-game { background:linear-gradient(#fff5d5,#edd5b2);color:#725773;border:2px solid #fffaf3; }
+html[data-arcade-game='six'] #joystick-zone { background:#fffaeb70;border:3px solid #fff9e9; }
+html[data-arcade-game='six'] #joystick-knob { background:linear-gradient(#dcc7e9,#b8a0cb);box-shadow:0 4px #9c8bae; }
+/* Color Splash: sketchbook paper, fabric swatches, and sticker previews. */
+html[data-arcade-game='seven'] { --bg:#f1e7ee;--card-bg:#fff9ef;--card-hover:#f3e5ef;--text:#655372;--text-muted:#958097;--accent:#bd8caf;--border:#ddcbdc; }
+html[data-arcade-game='seven'] body { background:radial-gradient(#c6acc02b 1px,transparent 1.5px) 0 0/15px 15px,linear-gradient(#eee6f3,#f5ebdf); }
+html[data-arcade-game='seven'] aside { background:#fff7e9;border-right:4px solid #fffdf7; }
+html[data-arcade-game='seven'] .thumb-card { background:linear-gradient(#fffdf7,#ede1ed);border:2px solid #fff;border-radius:15px;box-shadow:0 3px #d0bacc; }
+html[data-arcade-game='seven'] .thumb-card.active { border-color:#b594be;background:#eee0f2; }
+html[data-arcade-game='seven'] .thumb-title { color:#7c6585; }
+html[data-arcade-game='seven'] .unlock-label,html[data-arcade-game='seven'] #unlock-message { color:#966f55; }
+html[data-arcade-game='seven'] .viewport { border:9px solid #fffaf0;border-radius:25px;box-shadow:0 7px #ccb7c7,0 15px 30px #a1849e25; }
+html[data-arcade-game='seven'] .palette { border:3px solid #fff;border-radius:22px;background:#fffbf0;box-shadow:0 4px #c9b6cd; }
+html[data-arcade-game='seven'] .swatch { box-shadow:inset 0 2px #ffffff70,0 2px #77648430;border:2px solid #fff; }
+html[data-arcade-game='seven'] .swatch.selected { outline:3px solid #ac8cb7;outline-offset:2px; }
+html[data-arcade-game='seven'] .btn-delete { background:#f0c9d9;color:#8a5d78; }
+html[data-arcade-game='seven'] .studio-title { display:flex;align-items:center;gap:9px;font-weight:900;font-size:1.4rem; }
+/* Lobbies, including the older web builds. */
+html[data-arcade-game='lobby'] main,html[data-arcade-game='cloud-lobby'] .lobby { background:linear-gradient(#fffaf0,#e7e2f0);border:5px solid #fff;border-radius:28px;box-shadow:0 8px #b2b7d3; }
+html[data-arcade-game='lobby'] .weapon { background:linear-gradient(#e6eff7,#c5d7e9); }
+html[data-arcade-game='lobby'] .weapon.active { background:linear-gradient(#fff0ca,#eacfa9);outline:3px solid #d4b5c7; }
+html[data-arcade-game='lobby'] .status,html[data-arcade-game='lobby'] .players { color:#8a7194; }
+html[data-arcade-game='lobby'] body,html[data-arcade-game='cloud-lobby'] body { padding:16px 0 65px;overflow-y:auto; }
+html[data-arcade-game='space'] canvas,html[data-arcade-game='third'] canvas { min-height:0;min-width:0; }
+html[data-arcade-game] .modal-overlay h1 { color:#80658b;text-shadow:0 3px #fff9ed; }
+html[data-arcade-game='third-original'] .hud-badge,html[data-arcade-game='third-original'] #puzzle-arena { background:#fff6e9;color:#866682;border-color:#fff8eb;box-shadow:0 4px #c7a9c6; }
+html[data-arcade-game='third-original'] #grid-wrapper { background:linear-gradient(#f3d9e9,#dec4dd);border:5px solid #fff3e8;border-radius:22px;box-shadow:0 6px #c3a4bf; }
+html[data-arcade-game='third-original'] #puzzle-header { color:#926481; }
+html[data-arcade-game='third-original'] .modal-overlay { background:linear-gradient(#f6dfede8,#e7e1f4ed); }
+html[data-arcade-game='space-original'] .glass-panel { background:linear-gradient(#fff7ecf2,#e9ddefed);border:3px solid #fff9ed;box-shadow:0 5px #c1aecb; }
+html[data-arcade-game='space-original'] .title-font { font-family:'Trebuchet MS',system-ui,sans-serif; }
+html[data-arcade-game='space-original'] .glass-panel * { color:#7e668b;text-shadow:none; }
+html[data-arcade-game='space-original'] #start-screen,html[data-arcade-game='space-original'] #game-over-screen { background:#cfc4e7a0; }
+html[data-arcade-game='space-original'] [class*='bg-slate-900'] { background:#eee2ef; }
+html[data-arcade-game='cloud-native'] #header { background:linear-gradient(#f9efe2,#e0d5ec); }
+html[data-arcade-game='cloud-native'] #output { background:#f5ecf3;color:#7c6286; }
+html[data-arcade-game='cloud-native'] input[type=button] { background:#fff3d2;border:3px solid #fff;border-radius:14px;color:#786080; }
+@media(max-width:600px) {
+  html[data-arcade-game] header { flex-wrap:wrap;justify-content:center;gap:7px;padding:7px;font-size:12px; }
+  html[data-arcade-game='space'] main,html[data-arcade-game='third'] main { grid-template-rows:auto minmax(0,1fr) 116px; }
+  html[data-arcade-game='space'] footer,html[data-arcade-game='third'] footer { padding-bottom:50px; }
+  html[data-arcade-game='multi'] footer span:has(button) { display:flex;gap:8px; }
+  html[data-arcade-game] .game { height:100dvh;border-radius:0;padding:6px 6px 46px; }
+  html[data-arcade-game] .panel { padding:22px; }
+  html[data-arcade-game='rhythm'] .screen { padding:15px 16px 58px; }
+  html[data-arcade-game='rhythm'] .settings-strip label { flex-wrap:wrap;gap:5px; }
+  html[data-arcade-game='rhythm'] .song-card { padding:12px;margin-bottom:14px; }
+  html[data-arcade-game='tiki'] #board-container { padding:10px; }
+  html[data-arcade-game='tiki'] #board { grid-template-columns:repeat(3,min(24vw,140px));grid-template-rows:repeat(3,min(24vw,140px));gap:8px; }
+  html[data-arcade-game='tiki'] .cell { width:min(24vw,140px);height:min(24vw,140px); }
+  html[data-arcade-game='six'] #hud { top:52px; }
+  html[data-arcade-game='six'] #level-objective { top:115px; }
+  html[data-arcade-game='six'] #notify { top:175px; }
+}
+@media(prefers-reduced-motion:reduce) { html[data-arcade-game] * { animation:none!important;transition:none!important; } }

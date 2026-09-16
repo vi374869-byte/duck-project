@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" data-arcade-game="cloud">
+<head><script src="arcade-economy.js" data-game="cloud"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cloud Duel · Offline</title>
+  <style>
+    :root { font-family:"Trebuchet MS",system-ui,sans-serif; color:#f8fbff; background:#091329; }
+    * { box-sizing:border-box; } body { margin:0; min-height:100vh; display:grid; place-items:center; overflow:hidden; background:radial-gradient(circle at 50% 0,#314c7a,#091329 70%); }
+    .game { width:min(1100px,100vw); height:min(720px,100vh); display:grid; grid-template-rows:auto 1fr auto; padding:12px; gap:10px; }
+    header,.status { display:flex; align-items:center; justify-content:space-between; gap:12px; font-weight:900; }
+    .quit,.weapon { border:3px solid #fff; border-radius:12px; padding:8px 12px; font:inherit; font-weight:900; cursor:pointer; box-shadow:0 3px #4b77a1; }
+    .quit { background:#fff2a7; color:#805100; } .weapon { background:#86e6ff; color:#123b70; } .weapon.active { background:#ffcf7c; }
+    .arena { position:relative; min-height:0; border:5px solid #8de5ff; border-radius:22px; overflow:hidden; background:#08152d; box-shadow:0 0 0 5px #163c65,0 12px 35px #0008; }
+    canvas { width:100%; height:100%; display:block; touch-action:none; cursor:crosshair; }
+    .overlay { position:absolute; inset:0; display:grid; place-items:center; text-align:center; pointer-events:none; background:#061225a8; } .overlay[hidden] { display:none; }
+    .overlay div { padding:26px 34px; border:4px solid #fff; border-radius:25px; background:#264c7e; box-shadow:0 7px #142e51; } .overlay h1 { margin:0 0 8px; font-size:clamp(1.5rem,5vw,3rem); } .overlay p { margin:0; font-weight:800; }
+    .help { color:#b9d9ee; font-size:.82rem; text-align:center; font-weight:800; } .legend { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; } .tag { padding:5px 9px; border-radius:999px; background:#193a62; font-size:.8rem; }
+    @media(max-width:580px) { .game { padding:7px; } .status { align-items:flex-start; } .legend { justify-content:flex-start; } .help { font-size:.7rem; } }
+  </style>
+<link rel="stylesheet" href="arcade-games.css"><script src="pet-a-duck-art.js"></script><script src="arcade-art.js"></script><script src="arcade-controls.js"></script><link rel="stylesheet" href="arcade-controls.css"></head>
+<body>
+  <main class="game">
+    <header><button class="quit" id="quit">← Arcade</button><strong>☁ CLOUD DUEL · OFFLINE ARENA</strong><div class="legend"><span class="tag" id="score">0 KOs</span><span class="tag" id="health">♥ 100</span></div></header>
+    <section class="arena"><canvas id="arena" aria-label="Cloud Duel arena"></canvas><div class="overlay" id="intro"><div><img class="arcade-menu-logo" src="game-logo-multi.svg" alt=""><h1>Ready, pilot?</h1><p>Move with WASD or arrow keys. Aim and shoot with click or touch.</p></div></div></section>
+    <footer class="status"><span class="help">Defeat the three cloud bots. You respawn after each knockout.</span><div><button class="weapon active" data-weapon="rifle">1 Rifle</button> <button class="weapon" data-weapon="plasma">2 Plasma</button></div></footer>
+  </main>
+  <script>
+  (() => {
+    const canvas=document.getElementById('arena'), ctx=canvas.getContext('2d'), intro=document.getElementById('intro');
+    const scoreEl=document.getElementById('score'), healthEl=document.getElementById('health'); let w=0,h=0,last=0,started=false,weapon='rifle',shots=[],keys=new Set(),aim={x:0,y:0,down:false};
+    const player={name:'You',x:0,y:0,r:17,hp:100,max:100,color:'#a0cdb7',angle:0,ko:0,respawn:0};
+    const bots=[['Viper Bot','#e4b2c4'],['Ares Bot','#ffca68'],['Echo Bot','#c4b0d9']].map((b,i)=>({name:b[0],x:0,y:0,r:16,hp:100,max:100,color:b[1],angle:0,cool:i*.4,ko:0,respawn:0,phase:i*2.3}));
+    function resize(){ const box=canvas.getBoundingClientRect(),scale=Math.min(devicePixelRatio||1,2); canvas.width=Math.max(1,box.width*scale);canvas.height=Math.max(1,box.height*scale);ctx.setTransform(scale,0,0,scale,0,0);w=box.width;h=box.height;if(!player.x) reset(); }
+    function reset(){player.x=w*.5;player.y=h*.5;bots.forEach((b,i)=>{b.x=w*(.2+i*.28);b.y=h*(i%2?.72:.24);});}
+    function clamp(p){p.x=Math.max(p.r+12,Math.min(w-p.r-12,p.x));p.y=Math.max(p.r+12,Math.min(h-p.r-12,p.y));}
+    function fire(owner,angle,kind='rifle'){const speed=kind==='plasma'?370:590,damage=kind==='plasma'?30:16;shots.push({x:owner.x+Math.cos(angle)*(owner.r+5),y:owner.y+Math.sin(angle)*(owner.r+5),vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,owner,damage,r:kind==='plasma'?7:4,color:kind==='plasma'?'#a78bff':'#8df4ff',life:1.35});}
+    function hit(target,shot){target.hp-=shot.damage; if(target.hp>0)return;target.respawn=1.25;target.hp=0;if(shot.owner===player){scoreEl.textContent=`${player.ko+1} KOs`; player.ko++;Arcade.earn(5);} }
+    function update(dt){if(!started)return; const speed=255;let dx=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0),dy=(keys.has('s')||keys.has('arrowdown')?1:0)-(keys.has('w')||keys.has('arrowup')?1:0); if(dx||dy){const l=Math.hypot(dx,dy);player.x+=dx/l*speed*dt;player.y+=dy/l*speed*dt;clamp(player);}player.angle=Math.atan2(aim.y-player.y,aim.x-player.x);
+      if(aim.down&&player.hp>0){player.cool=(player.cool||0)-dt;if(player.cool<=0){fire(player,player.angle,weapon);player.cool=weapon==='plasma'?.48:.16;}}
+      bots.forEach((b,i)=>{if(b.respawn){b.respawn-=dt;if(b.respawn<=0){b.respawn=0;b.hp=b.max;b.x=80+(i*190)%(w-160);b.y=i%2?h-80:80;}return;}let a=Math.atan2(player.y-b.y,player.x-b.x);b.angle=a;let d=Math.hypot(player.x-b.x,player.y-b.y),move=d>230?1:d<150?-1:0;b.x+=Math.cos(a)*move*110*dt+Math.cos(last/700+b.phase)*35*dt;b.y+=Math.sin(a)*move*110*dt+Math.sin(last/800+b.phase)*35*dt;clamp(b);b.cool-=dt;if(b.cool<=0&&player.hp>0){fire(b,a+(Math.random()-.5)*.22,Math.random()>.7?'plasma':'rifle');b.cool=.42+Math.random()*.35;}});
+      shots=shots.filter(s=>{s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.life<=0||s.x<0||s.x>w||s.y<0||s.y>h)return false;const targets=s.owner===player?bots:[player];for(const t of targets){if(t.respawn||t.hp<=0)continue;if(Math.hypot(t.x-s.x,t.y-s.y)<t.r+s.r){hit(t,s);return false;}}return true;});
+      if(player.hp<=0&&!player.respawn){player.respawn=1.35;} if(player.respawn){player.respawn-=dt;if(player.respawn<=0){player.respawn=0;player.hp=player.max;player.x=w*.5;player.y=h*.5;}}healthEl.textContent=player.respawn?'RESPAWNING…':`♥ ${Math.max(0,Math.ceil(player.hp))}`;
+    }
+    function drawUnit(p){if(p.hp<=0)return;ArcadeArt.pilot(ctx,p.x,p.y,p.angle,p.color,p.name,p.hp,p.r);}
+    function draw(){ArcadeArt.arena(ctx,w,h);[[w*.18,h*.28],[w*.73,h*.64],[w*.48,h*.35]].forEach(([x,y])=>ArcadeArt.obstacle(ctx,x-55,y-22,110,44));shots.forEach(s=>ArcadeArt.pellet(ctx,s.x,s.y,s.color,s.r));bots.forEach(drawUnit);drawUnit(player);if(player.respawn){ctx.fillStyle='#78668a';ctx.font='bold 25px Trebuchet MS';ctx.textAlign='center';ctx.fillText('Resting…',w/2,h/2);}}
+    function loop(t){const dt=Math.min(.035,(t-last||0)/1000);last=t;update(dt);draw();requestAnimationFrame(loop);} function point(e){const r=canvas.getBoundingClientRect(),p=e.touches?.[0]||e;aim.x=p.clientX-r.left;aim.y=p.clientY-r.top;}
+    let firePointer=null;function begin(e){firePointer=e.pointerId;canvas.setPointerCapture(e.pointerId);point(e);aim.down=true;started=true;intro.hidden=true;e.preventDefault();} canvas.addEventListener('pointerdown',begin);canvas.addEventListener('pointermove',e=>{point(e);});window.addEventListener('pointerup',e=>{if(e.pointerId===firePointer){aim.down=false;firePointer=null;}});window.addEventListener('pointercancel',()=>{aim.down=false;firePointer=null});window.addEventListener('arcade-input-reset',()=>{keys.clear();aim.down=false;firePointer=null});window.addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(['1','2'].includes(e.key))select(e.key==='1'?'rifle':'plasma');});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+    function select(value){weapon=value;document.querySelectorAll('.weapon').forEach(b=>b.classList.toggle('active',b.dataset.weapon===value));}document.querySelectorAll('.weapon').forEach(b=>b.onclick=()=>select(b.dataset.weapon));document.getElementById('quit').onclick=()=>{if(parent!==window)parent.postMessage({type:'game-return-hub'},'*');else location.href='index.html';};new ResizeObserver(resize).observe(canvas);resize();requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>

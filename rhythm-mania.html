@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" data-arcade-game="rhythm">
+<head><script src="arcade-economy.js" data-game="rhythm"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Rhythm Mania</title>
+  <link rel="stylesheet" href="rhythm-mania.css">
+<link rel="icon" type="image/svg+xml" href="game-logo-rhythm.svg"><link rel="stylesheet" href="arcade-games.css"><script src="pet-a-duck-art.js"></script><script src="arcade-art.js"></script><script src="arcade-controls.js"></script><link rel="stylesheet" href="arcade-controls.css"></head>
+<body>
+  <audio id="song-one" preload="auto" src="rythm game audio 1.mp3"></audio>
+  <audio id="song-two" preload="auto" src="rythm game audio 2.mp3"></audio>
+  <div id="game-container">
+    <!-- Top HUD -->
+    <div id="hud">
+      <div class="hud-item"><span class="label">SCORE</span><span id="score-display">0000000</span></div>
+      <div class="hud-item"><span class="label">ACCURACY</span><span id="acc-display">100.00%</span></div>
+      <div class="hud-item health-wrap">
+        <span class="label">LIFE</span>
+        <div id="life-bar-bg"><div id="life-bar-fill"></div></div>
+      </div>
+      <div class="hud-item"><span class="label">PROGRESS</span><span id="progress-display">0%</span></div>
+    </div>
+
+    <!-- 2D Canvas Highway -->
+    <canvas id="stage"></canvas>
+
+    <!-- Center Judgement Overlay -->
+    <div id="judgement-display"></div>
+    <div id="combo-container">
+      <div id="combo-counter">0</div>
+      <div id="combo-label">COMBO</div>
+    </div>
+    <div id="delta-display"></div>
+
+    <!-- UI: Song Select Screen -->
+    <div id="menu-screen" class="screen">
+      <img class="arcade-menu-logo" src="game-logo-rhythm.svg" alt=""><h1 class="glitch-title" data-text="Rhythm Mania">Rhythm Mania</h1>
+      <p class="subtitle">A little rhythm. A little stardust.</p>
+
+      <div class="song-card">
+        <div class="song-info">
+          <div class="song-title">CYBERPUNK CRUSH</div>
+          <div class="song-artist">SynthRider • 140 BPM</div>
+        </div>
+        <div class="diff-selector">
+          <button class="btn-diff active" data-diff="easy">STANDARD (LV. 4)</button>
+          <button class="btn-diff" data-diff="hard">HYPER (LV. 9)</button>
+        </div>
+      </div>
+      <div class="song-card level-picker">
+        <button class="btn-level active" data-song="song-one">LEVEL 1 · Neon Pulse</button>
+        <button class="btn-level" data-song="song-two">LEVEL 2 · Starlight Rush</button>
+      </div>
+
+      <div class="settings-strip">
+        <label>Note speed:
+          <input type="range" id="speed-slider" min="1.0" max="4.0" step="0.2" value="2.4">
+          <span id="speed-val">2.4x</span>
+        </label>
+        <label>Audio timing (ms):
+          <input type="range" id="offset-slider" min="-150" max="150" step="5" value="0">
+          <span id="offset-val">0 ms</span>
+        </label>
+      </div>
+
+      <div class="keybind-hint">Keys: D · F · G · J · K — or tap the lanes</div>
+      <button id="btn-play" class="btn-cta">PLAY SONG</button>
+    </div>
+
+    <!-- UI: Results Screen -->
+    <div id="results-screen" class="screen hidden">
+      <h2 id="result-grade">GRADE: S</h2>
+      <div class="result-stats">
+        <div class="stat-row"><span>FINAL SCORE:</span><span id="res-score">0</span></div>
+        <div class="stat-row"><span>ACCURACY:</span><span id="res-acc">0%</span></div>
+        <div class="stat-row"><span>MAX COMBO:</span><span id="res-combo">0</span></div>
+        <hr/>
+        <div class="stat-row color-marvelous"><span>MARVELOUS (±22ms):</span><span id="res-c-marv">0</span></div>
+        <div class="stat-row color-perfect"><span>PERFECT (±45ms):</span><span id="res-c-perf">0</span></div>
+        <div class="stat-row color-great"><span>GREAT (±90ms):</span><span id="res-c-great">0</span></div>
+        <div class="stat-row color-ok"><span>OK (±135ms):</span><span id="res-c-ok">0</span></div>
+        <div class="stat-row color-miss"><span>MISS:</span><span id="res-c-miss">0</span></div>
+      </div>
+      <button id="btn-restart" class="btn-cta">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <script src="rhythm-mania-charts.js"></script>
+  <script src="rhythm-mania-audioengine.js"></script>
+  <script src="rhythm-mania.js"></script>
+<script src="arcade-game-inputs.js"></script></body>
+</html>

@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en" data-arcade-game="seven">
+<head><script src="arcade-economy.js" data-game="seven"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Color Splash · Sketchbook</title>
+  <style>
+    :root {
+      --bg: #0d0e12;
+      --card-bg: #16181f;
+      --card-hover: #1f222c;
+      --text: #f4f4f5;
+      --text-muted: #71717a;
+      --accent: #ff2a70;
+      --border: #272a34;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Sidebar / Navigation */
+    aside {
+      width: 380px;
+      min-width: 380px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 1.25rem;
+      gap: 1.5rem;
+      overflow-y: auto;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.75rem;
+    }
+    h2 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+    .book-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .thumb-card {
+      position: relative;
+      background: #1c1f28;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    }
+    .thumb-card:hover {
+      background: var(--card-hover);
+      border-color: #3b4050;
+    }
+    .thumb-card.active {
+      border-color: var(--accent);
+      background: #231d27;
+    }
+    .thumb-card.is-locked svg { opacity: .45; }
+    .unlock-label { color: #ffd66b; font-size: .75rem; font-weight: 700; }
+    #unlock-message { color: #ffd66b; font-size: .8rem; line-height: 1.4; }
+    .thumb-card svg {
+      width: 100%;
+      height: 90px;
+      pointer-events: none;
+      background: #ffffff;
+      border-radius: 4px;
+    }
+    .thumb-title {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #d4d4d8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    /* Delete Button */
+    .btn-delete {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      background: rgba(20, 20, 24, 0.85);
+      border: 1px solid var(--border);
+      color: #d4d4d8;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s, background 0.15s, color 0.15s;
+      z-index: 5;
+    }
+    .thumb-card:hover .btn-delete { opacity: 1; }
+    .btn-delete:hover {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #fff;
+    }
+
+    /* Main Workspace */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      gap: 1.25rem;
+    }
+    .viewport {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    svg#active-canvas {
+      width: 520px;
+      height: 520px;
+      display: block;
+    }
+
+    /* Crisp Line-Art Rendering */
+    .fillable {
+      fill: #ffffff;
+      stroke: #18181b;
+      stroke-width: 0.75;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+      cursor: pointer;
+      transition: fill 0.08s ease;
+    }
+    .fillable:hover {
+      filter: brightness(0.96);
+    }
+
+    /* Palette & Controls */
+    .palette-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .palette {
+      display: flex;
+      gap: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      outline: none;
+      transition: transform 0.12s ease;
+    }
+    .swatch.selected {
+      border-color: #ffffff;
+      transform: scale(1.22);
+    }
+    .action-row {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      background: #21242d;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 15px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .btn:hover { background: #2c303c; }
+    .btn-save { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-save:hover { opacity: 0.9; }
+    main { min-width: 0; }
+    .viewport { width: min(544px, 100%); }
+    svg#active-canvas { width: 100%; height: auto; aspect-ratio: 1; }
+    .palette-container { max-width: 100%; }
+    .palette { flex-wrap: wrap; justify-content: center; border-radius: 18px; }
+    @media (max-width: 760px) {
+      body { height: auto; min-height: 100vh; overflow: auto; flex-direction: column; padding-bottom: 60px; }
+      main { order: -1; padding: 16px; gap: 14px; }
+      aside { width: 100%; min-width: 0; max-height: 320px; }
+      .btn-delete { opacity: 1; }
+      .action-row { flex-wrap: wrap; justify-content: center; }
+    }
+  </style>
+<link rel="icon" type="image/svg+xml" href="game-logo-seven.svg"><link rel="stylesheet" href="arcade-games.css"><script src="pet-a-duck-art.js"></script><script src="arcade-art.js"></script><script src="arcade-controls.js"></script><link rel="stylesheet" href="arcade-controls.css"></head>
+<body>
+
+  <!-- Library Browser -->
+  <aside>
+    <div class="studio-title"><img class="arcade-inline-logo" src="game-logo-seven.svg" alt="">Color Splash</div>
+    <section>
+      <div class="section-header">
+        <h2>Templates (20)</h2>
+        <span style="font-size: 0.7rem; color: var(--text-muted);">Vector Sheets</span>
+      </div>
+      <div class="book-grid" id="templates-grid"></div>
+      <p id="unlock-message" role="status">One free drawing. Unlock each additional drawing for 25 coins.</p>
+    </section>
+
+    <section>
+      <div class="section-header">
+        <h2>Saved Artwork</h2>
+        <span style="font-size: 0.7rem; color: var(--text-muted);" id="saved-count">0 saved</span>
+      </div>
+      <div class="book-grid" id="saved-grid"></div>
+    </section>
+  </aside>
+
+  <!-- Interactive Studio Canvas -->
+  <main>
+    <div class="viewport">
+      <svg id="active-canvas" viewBox="0 0 200 200"></svg>
+    </div>
+
+    <div class="palette-container">
+      <div class="palette" id="palette"></div>
+      <div class="action-row">
+        <button class="btn" id="btn-undo">Undo</button>
+        <button class="btn" id="btn-clear">Reset</button>
+        <button class="btn btn-save" id="btn-save">Save Colored Art</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // --- 20 DETAILED VECTOR COLORING TEMPLATES ---
+    const TEMPLATES = [
+      {
+        id: 't01-monarch',
+        title: 'Monarch Butterfly',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t01-ant-l" class="fillable" d="M 98 60 C 95 45 80 40 76 42 C 77 46 88 48 97 62 Z" />
+          <path id="t01-ant-r" class="fillable" d="M 102 60 C 105 45 120 40 124 42 C 123 46 112 48 103 62 Z" />
+          <circle id="t01-head" class="fillable" cx="100" cy="65" r="4.5" />
+          <ellipse id="t01-thorax" class="fillable" cx="100" cy="78" rx="4" ry="7" />
+          <path id="t01-ab-1" class="fillable" d="M 97 86 L 103 86 L 102.5 95 L 97.5 95 Z" />
+          <path id="t01-ab-2" class="fillable" d="M 97.5 95 L 102.5 95 L 100 115 Z" />
+          <path id="t01-lw-top" class="fillable" d="M 96 72 C 70 50 40 45 18 52 C 16 57 20 66 35 68 C 60 70 90 76 96 72 Z" />
+          <path id="t01-lw-c1" class="fillable" d="M 35 68 C 22 72 16 80 22 88 C 40 85 58 78 72 74 C 55 71 42 69 35 68 Z" />
+          <path id="t01-lw-c2" class="fillable" d="M 22 88 C 28 98 42 98 52 92 C 65 85 75 78 78 75 C 60 78 40 84 22 88 Z" />
+          <path id="t01-lw-c3" class="fillable" d="M 52 92 C 60 102 76 100 84 94 C 88 88 88 82 82 77 C 72 82 60 88 52 92 Z" />
+          <path id="t01-lw-disc" class="fillable" d="M 72 74 C 82 73 93 74 95 76 C 92 84 88 86 82 77 Z" />
+          <path id="t01-rw-top" class="fillable" d="M 104 72 C 130 50 160 45 182 52 C 184 57 180 66 165 68 C 140 70 110 76 104 72 Z" />
+          <path id="t01-rw-c1" class="fillable" d="M 165 68 C 178 72 184 80 178 88 C 160 85 142 78 128 74 C 145 71 158 69 165 68 Z" />
+          <path id="t01-rw-c2" class="fillable" d="M 178 88 C 172 98 158 98 148 92 C 135 85 125 78 122 75 C 140 78 160 84 178 88 Z" />
+          <path id="t01-rw-c3" class="fillable" d="M 148 92 C 140 102 124 100 116 94 C 112 88 112 82 118 77 C 128 82 140 88 148 92 Z" />
+          <path id="t01-rw-disc" class="fillable" d="M 128 74 C 118 73 107 74 105 76 C 108 84 112 86 118 77 Z" />
+          <path id="t01-lhw-1" class="fillable" d="M 94 86 C 85 95 65 105 50 108 C 48 115 54 125 65 130 C 78 124 88 110 94 98 Z" />
+          <path id="t01-lhw-2" class="fillable" d="M 65 130 C 75 142 90 142 94 135 C 97 125 96 112 94 98 C 85 112 75 124 65 130 Z" />
+          <path id="t01-rhw-1" class="fillable" d="M 106 86 C 115 95 135 105 150 108 C 152 115 146 125 135 130 C 122 124 112 110 106 98 Z" />
+          <path id="t01-rhw-2" class="fillable" d="M 135 130 C 125 142 110 142 106 135 C 103 125 104 112 106 98 C 115 112 125 124 135 130 Z" />
+        `
+      },
+      {
+        id: 't02-rose',
+        title: 'Botanical Rose',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t02-stem" class="fillable" d="M 98 128 C 96 150 102 175 104 185 L 99 185 C 97 172 92 148 94 128 Z" />
+          <path id="t02-leaf-l1" class="fillable" d="M 95 142 C 80 136 60 140 46 148 C 60 152 75 152 95 146 Z" />
+          <path id="t02-leaf-l2" class="fillable" d="M 95 146 C 75 152 60 152 46 148 C 55 162 76 166 96 154 Z" />
+          <path id="t02-leaf-r1" class="fillable" d="M 100 150 C 118 142 140 146 154 154 C 138 158 122 158 101 154 Z" />
+          <path id="t02-leaf-r2" class="fillable" d="M 101 154 C 122 158 138 158 154 154 C 142 170 120 172 102 162 Z" />
+          <path id="t02-cal-l" class="fillable" d="M 85 118 C 72 124 64 132 60 136 C 68 130 82 124 92 124 Z" />
+          <path id="t02-cal-r" class="fillable" d="M 115 118 C 128 124 136 132 140 136 C 132 130 118 124 108 124 Z" />
+          <path id="t02-base" class="fillable" d="M 86 122 C 94 128 106 128 114 122 C 122 112 124 104 120 98 C 112 108 88 108 80 98 C 76 104 78 112 86 122 Z" />
+          <path id="t02-pet-ol" class="fillable" d="M 80 98 C 68 85 64 68 76 56 C 82 66 84 80 88 90 Z" />
+          <path id="t02-pet-or" class="fillable" d="M 120 98 C 132 85 136 68 124 56 C 118 66 116 80 112 90 Z" />
+          <path id="t02-crest" class="fillable" d="M 76 56 C 88 42 112 42 124 56 C 115 50 85 50 76 56 Z" />
+          <path id="t02-mid-l" class="fillable" d="M 88 90 C 82 78 86 64 96 58 C 92 68 90 82 92 92 Z" />
+          <path id="t02-mid-r" class="fillable" d="M 112 90 C 118 78 114 64 104 58 C 108 68 110 82 108 92 Z" />
+          <path id="t02-cup" class="fillable" d="M 86 86 C 92 98 108 98 114 86 C 108 92 92 92 86 86 Z" />
+          <path id="t02-core" class="fillable" d="M 96 66 C 94 74 104 76 106 70 C 104 64 98 64 96 66 Z" />
+        `
+      },
+      {
+        id: 't03-mandala',
+        title: 'Solar Mandala',
+        viewBox: '0 0 200 200',
+        markup: `
+          <circle id="t03-center" class="fillable" cx="100" cy="100" r="12" />
+          <path id="t03-pt-n" class="fillable" d="M 100 88 L 108 72 L 100 56 L 92 72 Z" />
+          <path id="t03-pt-s" class="fillable" d="M 100 112 L 108 128 L 100 144 L 92 128 Z" />
+          <path id="t03-pt-e" class="fillable" d="M 112 100 L 128 108 L 144 100 L 128 92 Z" />
+          <path id="t03-pt-w" class="fillable" d="M 88 100 L 72 108 L 56 100 L 72 92 Z" />
+          <path id="t03-pt-ne" class="fillable" d="M 108 92 L 124 84 L 132 72 L 120 78 Z" />
+          <path id="t03-pt-se" class="fillable" d="M 108 108 L 124 116 L 132 128 L 120 122 Z" />
+          <path id="t03-pt-sw" class="fillable" d="M 92 108 L 76 116 L 68 128 L 80 122 Z" />
+          <path id="t03-pt-nw" class="fillable" d="M 92 92 L 76 84 L 68 72 L 80 78 Z" />
+          <path id="t03-sh-n" class="fillable" d="M 92 56 Q 100 40 108 56 L 118 44 Q 100 28 82 44 Z" />
+          <path id="t03-sh-s" class="fillable" d="M 92 144 Q 100 160 108 144 L 118 156 Q 100 172 82 156 Z" />
+          <path id="t03-sh-e" class="fillable" d="M 144 92 Q 160 100 144 108 L 156 118 Q 172 100 156 82 Z" />
+          <path id="t03-sh-w" class="fillable" d="M 56 92 Q 40 100 56 108 L 44 118 Q 28 100 44 82 Z" />
+        `
+      },
+      {
+        id: 't04-owl',
+        title: 'Barn Owl',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t04-face-l" class="fillable" d="M 100 50 C 80 40 60 55 65 80 C 70 100 95 105 100 95 Z" />
+          <path id="t04-face-r" class="fillable" d="M 100 50 C 120 40 140 55 135 80 C 130 100 105 105 100 95 Z" />
+          <circle id="t04-eye-l" class="fillable" cx="82" cy="74" r="7" />
+          <circle id="t04-eye-r" class="fillable" cx="118" cy="74" r="7" />
+          <path id="t04-beak" class="fillable" d="M 97 82 L 103 82 L 100 98 Z" />
+          <path id="t04-breast" class="fillable" d="M 75 105 C 75 160 125 160 125 105 C 110 112 90 112 75 105 Z" />
+          <path id="t04-wing-l" class="fillable" d="M 75 105 C 50 115 45 155 70 170 C 60 150 65 125 75 105 Z" />
+          <path id="t04-wing-r" class="fillable" d="M 125 105 C 150 115 155 155 130 170 C 140 150 135 125 125 105 Z" />
+          <path id="t04-crest" class="fillable" d="M 75 48 C 88 35 112 35 125 48 C 115 44 85 44 75 48 Z" />
+        `
+      },
+      {
+        id: 't05-koi',
+        title: 'Koi Fish',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t05-head" class="fillable" d="M 50 75 C 38 85 38 100 48 115 C 60 115 70 105 75 95 C 70 85 60 75 50 75 Z" />
+          <circle id="t05-eye" class="fillable" cx="54" cy="88" r="3.5" />
+          <path id="t05-body-f" class="fillable" d="M 75 95 C 90 75 120 70 145 85 C 135 95 115 105 75 95 Z" />
+          <path id="t05-body-b" class="fillable" d="M 145 85 C 160 95 165 115 155 135 C 142 125 140 105 145 85 Z" />
+          <path id="t05-tail-1" class="fillable" d="M 155 135 C 170 150 185 145 188 135 C 175 135 165 130 155 135 Z" />
+          <path id="t05-tail-2" class="fillable" d="M 155 135 C 165 155 180 165 175 175 C 165 165 155 150 155 135 Z" />
+          <path id="t05-fin-l" class="fillable" d="M 68 76 C 60 60 70 50 82 55 C 80 65 75 72 68 76 Z" />
+          <path id="t05-fin-r" class="fillable" d="M 75 106 C 75 122 88 128 94 120 C 90 112 82 108 75 106 Z" />
+        `
+      },
+      {
+        id: 't06-hummingbird',
+        title: 'Hummingbird',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t06-beak" class="fillable" d="M 45 92 L 18 96 L 45 98 Z" />
+          <path id="t06-head" class="fillable" d="M 45 85 C 55 75 70 78 74 88 C 65 95 55 95 45 85 Z" />
+          <circle id="t06-eye" class="fillable" cx="55" cy="87" r="2.5" />
+          <path id="t06-throat" class="fillable" d="M 45 98 C 55 98 68 102 70 112 C 60 112 50 106 45 98 Z" />
+          <path id="t06-chest" class="fillable" d="M 70 112 C 75 135 95 145 110 145 C 98 128 92 115 70 112 Z" />
+          <path id="t06-wing-b" class="fillable" d="M 74 88 C 95 60 135 45 150 48 C 135 68 110 88 95 98 Z" />
+          <path id="t06-wing-f" class="fillable" d="M 95 98 C 115 80 145 75 165 82 C 145 98 120 110 100 115 Z" />
+          <path id="t06-tail" class="fillable" d="M 110 145 C 130 162 145 175 155 185 C 145 170 130 155 110 145 Z" />
+        `
+      },
+      {
+        id: 't07-scarab',
+        title: 'Sacred Scarab',
+        viewBox: '0 0 200 200',
+        markup: `
+          <circle id="t07-sun" class="fillable" cx="100" cy="35" r="14" />
+          <path id="t07-horn" class="fillable" d="M 92 65 C 92 50 108 50 108 65 L 105 70 L 95 70 Z" />
+          <path id="t07-head" class="fillable" d="M 88 70 L 112 70 L 116 80 L 84 80 Z" />
+          <path id="t07-prono" class="fillable" d="M 80 80 C 80 80 120 80 120 80 C 128 95 125 105 120 110 L 80 110 C 75 105 72 95 80 80 Z" />
+          <path id="t07-ely-l" class="fillable" d="M 78 112 L 98 112 L 98 165 C 80 160 70 140 78 112 Z" />
+          <path id="t07-ely-r" class="fillable" d="M 102 112 L 122 112 C 130 140 120 160 102 165 Z" />
+          <path id="t07-leg-fl" class="fillable" d="M 82 85 C 65 75 55 65 52 52 C 58 60 72 74 84 86 Z" />
+          <path id="t07-leg-fr" class="fillable" d="M 118 85 C 135 75 145 65 148 52 C 142 60 128 74 116 86 Z" />
+        `
+      },
+      {
+        id: 't08-mushroom',
+        title: 'Forest Fungi',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t08-cap" class="fillable" d="M 40 110 C 40 50 160 50 160 110 C 140 118 60 118 40 110 Z" />
+          <path id="t08-gills" class="fillable" d="M 40 110 C 65 122 135 122 160 110 C 145 128 55 128 40 110 Z" />
+          <path id="t08-stem" class="fillable" d="M 88 122 C 85 150 82 170 80 180 L 120 180 C 118 170 115 150 112 122 Z" />
+          <circle id="t08-spot-1" class="fillable" cx="75" cy="80" r="10" />
+          <circle id="t08-spot-2" class="fillable" cx="125" cy="78" r="8" />
+          <circle id="t08-spot-3" class="fillable" cx="100" cy="62" r="6" />
+          <circle id="t08-spot-4" class="fillable" cx="145" cy="98" r="5" />
+          <path id="t08-moss" class="fillable" d="M 65 180 Q 100 170 135 180 L 140 188 L 60 188 Z" />
+        `
+      },
+      {
+        id: 't09-jellyfish',
+        title: 'Deep Jellyfish',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t09-bell-out" class="fillable" d="M 50 90 C 50 35 150 35 150 90 C 135 95 115 90 100 95 C 85 90 65 95 50 90 Z" />
+          <path id="t09-bell-rim" class="fillable" d="M 50 90 C 65 102 85 98 100 104 C 115 98 135 102 150 90 C 145 106 55 106 50 90 Z" />
+          <path id="t09-arm-c" class="fillable" d="M 94 104 C 98 125 90 145 96 175 L 104 175 C 110 145 102 125 106 104 Z" />
+          <path id="t09-arm-l" class="fillable" d="M 75 102 C 82 120 70 145 78 180 L 73 180 C 65 145 76 120 70 102 Z" />
+          <path id="t09-arm-r" class="fillable" d="M 125 102 C 118 120 130 145 122 180 L 127 180 C 135 145 124 120 130 102 Z" />
+          <path id="t09-tent-1" class="fillable" d="M 60 100 Q 50 140 60 185 Q 56 140 62 100 Z" />
+          <path id="t09-tent-2" class="fillable" d="M 140 100 Q 150 140 140 185 Q 144 140 138 100 Z" />
+        `
+      },
+      {
+        id: 't10-fox',
+        title: 'Origami Fox',
+        viewBox: '0 0 200 200',
+        markup: `
+          <polygon id="t10-snout" class="fillable" points="100,145 82,105 118,105" />
+          <polygon id="t10-nose" class="fillable" points="100,145 95,138 105,138" />
+          <polygon id="t10-che-l" class="fillable" points="82,105 100,145 55,120" />
+          <polygon id="t10-che-r" class="fillable" points="118,105 100,145 145,120" />
+          <polygon id="t10-fore" class="fillable" points="100,105 82,105 100,68 118,105" />
+          <polygon id="t10-ear-l" class="fillable" points="82,105 100,68 62,45" />
+          <polygon id="t10-ear-r" class="fillable" points="118,105 100,68 138,45" />
+          <polygon id="t10-outer-l" class="fillable" points="82,105 62,45 55,120" />
+          <polygon id="t10-outer-r" class="fillable" points="118,105 138,45 145,120" />
+        `
+      },
+      {
+        id: 't11-succulent',
+        title: 'Desert Echeveria',
+        viewBox: '0 0 200 200',
+        markup: `
+          <circle id="t11-center" class="fillable" cx="100" cy="100" r="10" />
+          <path id="t11-p1" class="fillable" d="M 94 92 C 90 75 110 75 106 92 Z" />
+          <path id="t11-p2" class="fillable" d="M 108 94 C 125 90 125 110 108 106 Z" />
+          <path id="t11-p3" class="fillable" d="M 106 108 C 110 125 90 125 94 108 Z" />
+          <path id="t11-p4" class="fillable" d="M 92 106 C 75 110 75 90 92 94 Z" />
+          <path id="t11-o1" class="fillable" d="M 88 80 C 80 50 120 50 112 80 Z" />
+          <path id="t11-o2" class="fillable" d="M 120 88 C 150 80 150 120 120 112 Z" />
+          <path id="t11-o3" class="fillable" d="M 112 120 C 120 150 80 150 88 120 Z" />
+          <path id="t11-o4" class="fillable" d="M 80 112 C 50 120 50 80 80 88 Z" />
+        `
+      },
+      {
+        id: 't12-moon-moth',
+        title: 'Lunar Cecropia',
+        viewBox: '0 0 200 200',
+        markup: `
+          <ellipse id="t12-body" class="fillable" cx="100" cy="90" rx="5" ry="18" />
+          <path id="t12-lw-main" class="fillable" d="M 95 80 C 70 45 30 50 20 65 C 20 85 60 100 95 95 Z" />
+          <circle id="t12-lw-eye" class="fillable" cx="50" cy="74" r="8" />
+          <path id="t12-rw-main" class="fillable" d="M 105 80 C 130 45 170 50 180 65 C 180 85 140 100 105 95 Z" />
+          <circle id="t12-rw-eye" class="fillable" cx="150" cy="74" r="8" />
+          <path id="t12-lh-tail" class="fillable" d="M 95 95 C 75 115 65 145 60 175 C 68 175 80 135 95 110 Z" />
+          <path id="t12-rh-tail" class="fillable" d="M 105 95 C 125 115 135 145 140 175 C 132 175 120 135 105 110 Z" />
+        `
+      },
+      {
+        id: 't13-chameleon',
+        title: 'Tree Chameleon',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t13-branch" class="fillable" d="M 20 150 C 70 145 140 155 180 150 L 180 160 C 140 165 70 155 20 160 Z" />
+          <path id="t13-head" class="fillable" d="M 50 115 C 45 90 75 80 90 95 C 80 115 65 120 50 115 Z" />
+          <circle id="t13-eye" class="fillable" cx="68" cy="100" r="7" />
+          <path id="t13-body" class="fillable" d="M 90 95 C 115 75 150 95 150 130 C 125 135 100 120 90 95 Z" />
+          <path id="t13-tail" class="fillable" d="M 150 130 C 175 135 175 165 155 165 C 145 165 145 150 155 150 Z" />
+          <path id="t13-crest" class="fillable" d="M 55 92 C 65 75 85 75 92 88 Z" />
+        `
+      },
+      {
+        id: 't14-nautilus',
+        title: 'Spiral Nautilus',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t14-ch-1" class="fillable" d="M 100 100 L 100 90 A 10 10 0 0 1 110 100 Z" />
+          <path id="t14-ch-2" class="fillable" d="M 110 100 A 15 15 0 0 1 95 115 L 100 100 Z" />
+          <path id="t14-ch-3" class="fillable" d="M 95 115 A 25 25 0 0 1 75 90 L 100 100 Z" />
+          <path id="t14-ch-4" class="fillable" d="M 75 90 A 40 40 0 0 1 115 60 L 100 100 Z" />
+          <path id="t14-ch-5" class="fillable" d="M 115 60 A 65 65 0 0 1 165 125 L 100 100 Z" />
+          <path id="t14-ch-6" class="fillable" d="M 165 125 A 95 95 0 0 1 70 175 L 100 100 Z" />
+        `
+      },
+      {
+        id: 't15-crystal',
+        title: 'Geometric Cluster',
+        viewBox: '0 0 200 200',
+        markup: `
+          <polygon id="t15-c1-top" class="fillable" points="100,30 85,60 115,60" />
+          <polygon id="t15-c1-l" class="fillable" points="85,60 100,150 75,140" />
+          <polygon id="t15-c1-r" class="fillable" points="85,60 115,60 100,150" />
+          <polygon id="t15-c1-fr" class="fillable" points="115,60 125,140 100,150" />
+          <polygon id="t15-c2-top" class="fillable" points="60,70 50,95 75,95" />
+          <polygon id="t15-c2-b" class="fillable" points="50,95 75,95 65,155 45,145" />
+          <polygon id="t15-c3-top" class="fillable" points="140,75 130,100 155,95" />
+          <polygon id="t15-c3-b" class="fillable" points="130,100 155,95 150,150 128,145" />
+        `
+      },
+      {
+        id: 't16-lotus',
+        title: 'Zen Lotus',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t16-pod" class="fillable" d="M 90 120 C 90 110 110 110 110 120 Z" />
+          <path id="t16-p-c" class="fillable" d="M 100 70 C 90 90 90 110 100 125 C 110 110 110 90 100 70 Z" />
+          <path id="t16-p-l1" class="fillable" d="M 100 70 C 80 85 75 105 88 124 C 92 110 94 90 100 70 Z" />
+          <path id="t16-p-r1" class="fillable" d="M 100 70 C 120 85 125 105 112 124 C 108 110 106 90 100 70 Z" />
+          <path id="t16-p-l2" class="fillable" d="M 88 88 C 65 98 60 118 78 128 C 84 120 86 105 88 88 Z" />
+          <path id="t16-p-r2" class="fillable" d="M 112 88 C 135 98 140 118 122 128 C 116 120 114 105 112 88 Z" />
+          <path id="t16-pad" class="fillable" d="M 30 140 C 70 130 130 130 170 140 C 145 155 55 155 30 140 Z" />
+        `
+      },
+      {
+        id: 't17-seahorse',
+        title: 'Ocean Seahorse',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t17-snout" class="fillable" d="M 75 58 L 50 62 L 50 68 L 74 66 Z" />
+          <path id="t17-head" class="fillable" d="M 74 54 C 70 42 90 40 92 55 C 88 68 76 68 74 54 Z" />
+          <circle id="t17-eye" class="fillable" cx="78" cy="54" r="2.5" />
+          <path id="t17-crown" class="fillable" d="M 88 44 L 96 38 L 94 48 L 102 44 L 96 52 Z" />
+          <path id="t17-belly" class="fillable" d="M 78 68 C 65 85 70 115 88 125 C 95 110 92 85 78 68 Z" />
+          <path id="t17-back" class="fillable" d="M 88 68 C 96 85 96 110 88 125 C 102 110 102 85 88 68 Z" />
+          <path id="t17-tail" class="fillable" d="M 88 125 C 80 145 95 168 112 165 C 122 155 110 145 104 152 Z" />
+        `
+      },
+      {
+        id: 't18-lighthouse',
+        title: 'Coastal Beacon',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t18-rock" class="fillable" d="M 40 165 Q 100 150 160 165 L 170 185 L 30 185 Z" />
+          <polygon id="t18-base" class="fillable" points="80,160 120,160 116,135 84,135" />
+          <polygon id="t18-mid" class="fillable" points="84,135 116,135 112,95 88,95" />
+          <polygon id="t18-top" class="fillable" points="88,95 112,95 110,65 90,65" />
+          <rect id="t18-room" class="fillable" x="88" y="50" width="24" height="15" />
+          <polygon id="t18-roof" class="fillable" points="84,50 116,50 100,32" />
+          <polygon id="t18-beam-l" class="fillable" points="88,57 20,40 20,70" />
+          <polygon id="t18-beam-r" class="fillable" points="112,57 180,40 180,70" />
+        `
+      },
+      {
+        id: 't19-dragonfly',
+        title: 'Anisoptera (Dragonfly)',
+        viewBox: '0 0 200 200',
+        markup: `
+          <circle id="t19-head" class="fillable" cx="100" cy="52" r="5" />
+          <ellipse id="t19-thorax" class="fillable" cx="100" cy="65" rx="4.5" ry="8" />
+          <path id="t19-tail" class="fillable" d="M 98 73 L 102 73 L 101 165 L 99 165 Z" />
+          <path id="t19-fw-l" class="fillable" d="M 97 62 C 60 48 25 55 15 65 C 25 72 65 72 96 66 Z" />
+          <path id="t19-fw-r" class="fillable" d="M 103 62 C 140 48 175 55 185 65 C 175 72 135 72 104 66 Z" />
+          <path id="t19-hw-l" class="fillable" d="M 97 68 C 65 65 30 75 22 88 C 35 94 72 85 96 72 Z" />
+          <path id="t19-hw-r" class="fillable" d="M 103 68 C 135 65 170 75 178 88 C 165 94 128 85 104 72 Z" />
+        `
+      },
+      {
+        id: 't20-crescent',
+        title: 'Celestial Eclipse',
+        viewBox: '0 0 200 200',
+        markup: `
+          <path id="t20-moon" class="fillable" d="M 100 25 A 75 75 0 1 0 165 135 A 62 62 0 1 1 100 25 Z" />
+          <polygon id="t20-star-1" class="fillable" points="135,55 138,65 148,68 138,71 135,80 132,71 122,68 132,65" />
+          <polygon id="t20-star-2" class="fillable" points="110,85 112,92 120,95 112,98 110,105 108,98 100,95 108,92" />
+          <polygon id="t20-star-3" class="fillable" points="145,105 147,112 155,115 147,118 145,125 143,118 135,115 143,112" />
+          <circle id="t20-orb-1" class="fillable" cx="95" cy="60" r="3" />
+          <circle id="t20-orb-2" class="fillable" cx="125" cy="140" r="4" />
+        `
+      }
+    ];
+
+    const PALETTE_COLORS = [
+      '#ff2a70', '#e01e5a', '#9b1750', '#ff7597',
+      '#a855f7', '#7c3aed', '#4f46e5', '#2563eb',
+      '#06b6d4', '#0d9488', '#10b981', '#84cc16',
+      '#eab308', '#f97316', '#ef4444', '#78350f',
+      '#ffffff', '#cbd5e1', '#64748b', '#18181b'
+    ];
+
+    // --- APPLICATION STATE ---
+    let currentTemplateId = TEMPLATES[0].id;
+    let currentColor = PALETTE_COLORS[0];
+    let undoStack = [];
+
+    const canvas = document.getElementById('active-canvas');
+    const templatesGrid = document.getElementById('templates-grid');
+    const savedGrid = document.getElementById('saved-grid');
+    const savedCount = document.getElementById('saved-count');
+    const palette = document.getElementById('palette');
+
+    // --- COLOR PALETTE INITIALIZATION ---
+    PALETTE_COLORS.forEach((col, idx) => {
+      const swatch = document.createElement('button');
+      swatch.className = `swatch ${idx === 0 ? 'selected' : ''}`;
+      swatch.style.backgroundColor = col;
+      swatch.addEventListener('click', () => {
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+        swatch.classList.add('selected');
+        currentColor = col;
+      });
+      palette.appendChild(swatch);
+    });
+
+    // --- WORKSPACE & SVG CONTROL ---
+    const DRAWING_COST = 25;
+    function drawingUnlocked(id, state = Arcade.read()) {
+      return id === TEMPLATES[0].id || (Array.isArray(state.colorDrawings) && state.colorDrawings.includes(id));
+    }
+    function selectDrawing(id, fills = null) {
+      const template = TEMPLATES.find(t => t.id === id);
+      if (!template) return;
+      const state = Arcade.read();
+      if (!drawingUnlocked(id, state)) {
+        if (state.coins < DRAWING_COST) {
+          document.getElementById('unlock-message').textContent = `You need ${DRAWING_COST - state.coins} more coins to unlock ${template.title}.`;
+          return;
+        }
+        state.coins -= DRAWING_COST;
+        state.colorDrawings = [...(Array.isArray(state.colorDrawings) ? state.colorDrawings : []), id];
+        Arcade.write(state);
+        document.getElementById('unlock-message').textContent = `${template.title} unlocked for 25 coins!`;
+      }
+      loadTemplate(id, fills);
+    }
+    function loadTemplate(templateId, stateOverrides = null) {
+      const template = TEMPLATES.find(t => t.id === templateId);
+      if (!template || !drawingUnlocked(templateId)) return;
+      currentTemplateId = templateId;
+      undoStack = [];
+
+      canvas.setAttribute('viewBox', template.viewBox);
+      canvas.innerHTML = template.markup;
+
+      if (stateOverrides) {
+        Object.entries(stateOverrides).forEach(([id, fill]) => {
+          const el = canvas.querySelector(`#${CSS.escape(id)}`);
+          if (el) el.style.fill = fill;
+        });
+      }
+
+      document.querySelectorAll('#templates-grid .thumb-card').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.template === templateId);
+      });
+    }
+
+    canvas.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('fillable')) return;
+
+      const prevColor = e.target.style.fill || '#ffffff';
+      if (prevColor === currentColor) return;
+
+      undoStack.push({ element: e.target, color: prevColor });
+      e.target.style.fill = currentColor;
+    });
+
+    document.getElementById('btn-undo').addEventListener('click', () => {
+      const step = undoStack.pop();
+      if (step) step.element.style.fill = step.color;
+    });
+
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      canvas.querySelectorAll('.fillable').forEach(el => el.style.fill = '#ffffff');
+      undoStack = [];
+    });
+
+    // --- LOCALSTORAGE & PERSISTENCE ---
+    function fetchSaves() {
+      const saves = Arcade.safeRead('vector_coloring_saves_v2', []);
+      return Array.isArray(saves) ? saves.filter(s => s && typeof s.fills === 'object' && s.fills) : [];
+    }
+
+    function commitSaves(saves) {
+      localStorage.setItem('vector_coloring_saves_v2', JSON.stringify(saves));
+    }
+
+    document.getElementById('btn-save').addEventListener('click', () => {
+      const fills = {};
+      canvas.querySelectorAll('.fillable').forEach(el => {
+        if (el.style.fill && el.style.fill !== 'rgb(255, 255, 255)' && el.style.fill !== '#ffffff') {
+          fills[el.id] = el.style.fill;
+        }
+      });
+
+      const saves = fetchSaves();
+      const newEntry = {
+        saveId: 'art_' + Date.now(),
+        templateId: currentTemplateId,
+        date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        fills: fills
+      };
+
+      if (Object.keys(fills).length >= 3) Arcade.earn(15, 'seven', 'art:' + currentTemplateId);
+      saves.unshift(newEntry);
+      commitSaves(saves);
+      renderSavedGallery();
+    });
+
+    function deleteSavedArt(saveId, event) {
+      event.stopPropagation();
+      let saves = fetchSaves();
+      saves = saves.filter(s => s.saveId !== saveId);
+      commitSaves(saves);
+      renderSavedGallery();
+    }
+
+    // --- UI RENDERING ---
+    function renderTemplateShelf() {
+      templatesGrid.innerHTML = '';
+      TEMPLATES.forEach(tpl => {
+        const unlocked = drawingUnlocked(tpl.id);
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `thumb-card ${tpl.id === currentTemplateId ? 'active' : ''} ${unlocked ? '' : 'is-locked'}`;
+        card.dataset.template = tpl.id;
+        card.setAttribute('aria-label', unlocked ? `Open ${tpl.title}` : `Unlock ${tpl.title} for 25 coins`);
+        card.innerHTML = `
+          <svg viewBox="${tpl.viewBox}">${tpl.markup}</svg>
+          <span class="thumb-title">${tpl.title}</span>
+          <span class="unlock-label">${unlocked ? (tpl.id === TEMPLATES[0].id ? 'Free' : 'Unlocked') : '🔒 Unlock · 25 coins'}</span>
+        `;
+        card.addEventListener('click', () => selectDrawing(tpl.id));
+        templatesGrid.appendChild(card);
+      });
+    }
+
+    function renderSavedGallery() {
+      savedGrid.innerHTML = '';
+      const saves = fetchSaves();
+      savedCount.textContent = `${saves.length} saved`;
+
+      if (saves.length === 0) {
+        savedGrid.innerHTML = `
+          <div style="grid-column: span 2; padding: 24px 0; text-align: center; color: var(--text-muted); font-size: 0.75rem;">
+            No saved artwork yet.
+          </div>
+        `;
+        return;
+      }
+
+      saves.forEach(item => {
+        const tpl = TEMPLATES.find(t => t.id === item.templateId);
+        if (!tpl) return;
+
+        const card = document.createElement('div');
+        card.className = 'thumb-card';
+        card.innerHTML = `
+          <button class="btn-delete" title="Delete Artwork">&times;</button>
+          <svg viewBox="${tpl.viewBox}">${tpl.markup}</svg>
+          <span class="thumb-title">${tpl.title}</span>
+          <span class="unlock-label">${drawingUnlocked(tpl.id) ? 'Open drawing' : '🔒 Unlock · 25 coins'}</span>
+        `;
+
+        Object.entries(item.fills).forEach(([id, fill]) => {
+          const path = card.querySelector(`#${CSS.escape(id)}`);
+          if (path) path.style.fill = fill;
+        });
+
+        card.querySelector('.btn-delete').addEventListener('click', (e) => {
+          deleteSavedArt(item.saveId, e);
+        });
+
+        card.addEventListener('click', () => {
+          selectDrawing(item.templateId, item.fills);
+        });
+
+        savedGrid.appendChild(card);
+      });
+    }
+
+    // --- INITIAL BOOT ---
+    window.addEventListener('arcade-economy', () => { renderTemplateShelf(); renderSavedGallery(); });
+    renderTemplateShelf();
+    renderSavedGallery();
+    loadTemplate(TEMPLATES[0].id);
+  </script>
+<script src="arcade-game-inputs.js"></script></body>
+</html>

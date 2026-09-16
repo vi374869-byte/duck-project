@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="arcade-economy.js" data-game="duck"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pet a Duck</title>
+    <link rel="stylesheet" href="pet-a-duck.css">
+    <link rel="manifest" href="pet-a-duck-manifest.json">
+<link rel="stylesheet" href="game-logos.css">
+<link rel="icon" type="image/svg+xml" href="game-logo-duck.svg"><script src="arcade-controls.js"></script><link rel="stylesheet" href="arcade-controls.css"></head>
+<body>
+
+    <!-- Background Music Audio Loop -->
+    <audio id="bgMusic" loop>
+        <source src="pet-a-duck-music.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="gameWrapper">
+        <!-- Top Blue Bar & Persistent UI Stats -->
+        <div id="topStats" style="display: none;">
+            <div id="topBarHeader">
+                <button class="header-btn" onclick="switchRoom(State.MENU)">🏠 Home</button>
+                <button class="header-btn" onclick="toggleGameMenu()">🎮 Games ▾</button>
+                <div id="coinDisplay">🪙 <span id="coinVal">200</span></div>
+            </div>
+            <div class="stat-row">
+                <span class="stat-badge">🍎 Hunger</span>
+                <div class="stat-bar-bg"><div id="barHunger" class="stat-bar-fill"></div></div>
+            </div>
+            <div class="stat-row">
+                <span class="stat-badge">🧼 Hygiene</span>
+                <div class="stat-bar-bg"><div id="barClean" class="stat-bar-fill"></div></div>
+            </div>
+            <div class="stat-row">
+                <span class="stat-badge">⚡ Energy</span>
+                <div class="stat-bar-bg"><div id="barEnergy" class="stat-bar-fill"></div></div>
+            </div>
+        </div>
+
+        <!-- Mini-Games Dropdown Window -->
+        <div id="gamesDropdown" style="display: none;">
+            <button class="dropdown-game-btn" onclick="switchRoom(State.ARCADE_FLAP); toggleGameMenu();"><img class="mini-game-logo" src="game-logo-duck.svg" alt=""> Flappy Duck</button>
+            <button class="dropdown-game-btn" onclick="switchRoom(State.ARCADE_CATCH); toggleGameMenu();"><img class="mini-game-logo" src="game-logo-catch.svg" alt=""> Bread Catch</button>
+            <button class="dropdown-game-btn" onclick="switchRoom(State.ARCADE_BUBBLES); toggleGameMenu();"><img class="mini-game-logo" src="game-logo-bubbles.svg" alt=""> Pop Bubbles</button>
+        </div>
+
+        <!-- Main Viewport Canvas -->
+        <canvas id="gameCanvas" width="450" height="600"></canvas>
+
+        <!-- ── VIP Success Toast ────────────────────────────────────────── -->
+        <div id="vipSuccessToast">
+            🎉 VIP Activated! Check your Wardrobe for new items!
+        </div>
+
+        <!-- Bottom Blue Bar & Navigation Deck -->
+        <div id="uiControlPanel" style="display: none;">
+            <div class="btn-row">
+                <button class="game-btn btn-room" onclick="switchRoom(State.ROOM_1_HOME)">Dorm</button>
+                <button class="game-btn btn-bath" onclick="switchRoom(State.ROOM_2_BATH)">Bath</button>
+                <button class="game-btn btn-garden" onclick="switchRoom(State.ROOM_3_GARDEN)">Garden</button>
+                <button class="game-btn btn-closet" onclick="switchRoom(State.ROOM_4_CLOSET)">Wardrobe</button>
+                <button class="game-btn btn-store" onclick="switchRoom(State.ROOM_5_STORE)">Store</button>
+                <button class="game-btn btn-kitchen" onclick="switchRoom(State.ROOM_6_KITCHEN)">Kitchen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="pet-a-duck-audio.js"></script>
+    <script src="pet-a-duck-art.js"></script>
+    <script src="pet-a-duck.js"></script>
+<script src="arcade-game-inputs.js"></script></body>
+</html>

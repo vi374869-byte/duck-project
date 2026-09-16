@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head><script src="arcade-economy.js" data-game="hub"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sky Arcade</title>
+  <link rel="stylesheet" href="sky-arcade.css">
+<link rel="stylesheet" href="game-logos.css">
+</head>
+<body>
+  <main class="hub-shell">
+    <header class="topbar">
+      <button class="brand" type="button" onclick="showHub()">Sky Arcade</button>
+      <div class="coins" aria-label="Coins" aria-live="polite">🪙 <span id="coinVal">0</span></div>
+      <button class="vip-button" type="button" onclick="openStore()">VIP Store</button>
+    </header>
+    <section id="dashboardScreen" class="dashboard">
+      <div class="hero"><span>WELCOME TO</span><h1>Sky Arcade</h1><p>One little duck. A whole world of games.</p></div>
+      <div class="game-grid">
+        <button class="game-card featured duck-card" type="button" onclick="launchGame('duck')"><span class="game-icon"><img src="game-logo-duck.svg" alt="" width="112" height="112" decoding="async"></span><strong>Pet a Duck</strong><small>Care, decorate, and play</small><b>PLAY</b></button>
+        <button class="game-card featured space-card" type="button" onclick="launchGame('space')"><span class="game-icon"><img src="game-logo-space.svg" alt="" width="112" height="112" decoding="async"></span><strong>Space Wars</strong><small>Blast meteors. Save the stars.</small><b>PLAY</b></button>
+        <button class="game-card featured third-card" type="button" onclick="launchGame('third')"><span class="game-icon"><img src="game-logo-third.svg" alt="" width="112" height="112" decoding="async"></span><strong>Candy Racers</strong><small>Race, collect, and win sweet prizes.</small><b>PLAY</b></button>
+        <button class="game-card featured tiki-card" type="button" onclick="launchGame('tiki')"><span class="game-icon"><img src="game-logo-tiki.svg" alt="" width="112" height="112" decoding="async"></span><strong>TikiTaki</strong><small>Island totem tic-tac-toe.</small><b>PLAY</b></button>
+        <button class="game-card featured rhythm-card" type="button" onclick="launchGame('rhythm')"><span class="game-icon"><img src="game-logo-rhythm.svg" alt="" width="112" height="112" decoding="async"></span><strong>Rhythm Mania</strong><small>Tap to the beat and chase the high score.</small><b>PLAY</b></button>
+      </div>
+    </section>
+    <section id="playScreen" class="play-screen" hidden>
+      <div class="play-toolbar"><button class="back-button" type="button" onclick="showHub()">← Game hub</button><strong id="gameTitle">Pet a Duck</strong><button class="fullscreen-button" type="button" onclick="toggleFullscreen()">⛶ Full screen</button></div>
+      <iframe id="gameFrame" title="Game"></iframe>
+    </section>
+  </main>
+  <div id="storeModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="storeTitle">
+    <div class="modal-card"><button class="close" type="button" aria-label="Close" onclick="closeStore()">×</button><span class="eyebrow">VIP BUNDLE</span><h2 id="storeTitle">Make your duck sparkle.</h2><ul><li>1,000 shared coins</li><li>5 VIP outfits</li><li>5 VIP furniture pieces</li><li>Duck colour picker in Wardrobe</li></ul><button id="checkoutButton" class="checkout" type="button" onclick="startCheckout()">Continue to secure payment</button><p id="storeMessage" class="store-message">VIP rewards unlock after Stripe confirms payment.</p></div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>

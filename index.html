@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head><script src="arcade-economy.js" data-game="hub"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sky Arcade</title>
+  <link rel="stylesheet" href="sky-arcade.css">
+<link rel="stylesheet" href="game-logos.css">
+<script src="arcade-controls.js"></script><link rel="stylesheet" href="arcade-controls.css"></head>
+<body>
+  <main class="hub-shell">
+    <header class="topbar">
+      <button class="brand" type="button" onclick="showHub()">Sky Arcade</button>
+      <div class="coins" aria-label="Coins" aria-live="polite">🪙 <span id="coinVal">0</span></div>
+    </header>
+    <section id="dashboardScreen" class="dashboard">
+      <div class="hero"><span>WELCOME TO</span><h1>Sky Arcade</h1><p>One little duck. A whole world of games.</p></div>
+      <div class="game-grid">
+        <button class="game-card featured duck-card" type="button" onclick="launchGame('duck')"><span class="game-icon"><img src="game-logo-duck.svg" alt="" width="112" height="112" decoding="async"></span><strong>Pet a Duck</strong><small>Care, decorate, and play</small><b>PLAY</b></button>
+        <button class="game-card featured space-card" type="button" onclick="launchGame('space')"><span class="game-icon"><img src="game-logo-space.svg" alt="" width="112" height="112" decoding="async"></span><strong>Space Wars</strong><small>Blast meteors. Save the stars.</small><b>PLAY</b></button>
+        <button class="game-card featured third-card" type="button" onclick="launchGame('third')"><span class="game-icon"><img src="game-logo-third.svg" alt="" width="112" height="112" decoding="async"></span><strong>Candy Racers</strong><small>Race, collect, and win sweet prizes.</small><b>PLAY</b></button>
+        <button class="game-card featured tiki-card" type="button" onclick="launchGame('tiki')"><span class="game-icon"><img src="game-logo-tiki.svg" alt="" width="112" height="112" decoding="async"></span><strong>TikiTaki</strong><small>Island totem tic-tac-toe.</small><b>PLAY</b></button>
+        <button class="game-card featured rhythm-card" type="button" onclick="launchGame('rhythm')"><span class="game-icon"><img src="game-logo-rhythm.svg" alt="" width="112" height="112" decoding="async"></span><strong>Rhythm Mania</strong><small>Tap to the beat and chase the high score.</small><b>PLAY</b></button>
+        <button class="game-card featured mystery-card" type="button" onclick="launchGame('six')"><span class="game-icon"><img src="game-logo-six.svg" alt="" width="112" height="112" decoding="async"></span><strong>Tycoon</strong><small>Build your dream business.</small><b>PLAY</b></button>
+        <button class="game-card color-card" type="button" onclick="launchGame('seven')"><span class="game-icon"><img src="game-logo-seven.svg" alt="" width="112" height="112" decoding="async"></span><strong>Color Splash</strong><small>Choose a sheet and color your own art.</small><b>PLAY</b></button>
+        <button class="game-card coming-card" type="button" disabled aria-label="Game 8 coming soon"><span class="game-icon"><img src="game-logo-soon.svg" alt="" width="112" height="112" decoding="async"></span><strong>Coming Soon</strong><small>Game number 8 is on its way!</small><b>SOON</b></button>
+      </div>
+      <section class="multiplayer-zone" aria-labelledby="multiplayerTitle">
+        <span class="multiplayer-kicker">PLAY TOGETHER</span>
+        <h2 id="multiplayerTitle">Multiplayer Games</h2>
+        <button class="game-card strike-card" type="button" onclick="launchGame('multi')"><span class="game-icon"><img src="game-logo-multi.svg" alt="" width="112" height="112" decoding="async"></span><strong>Sky Strike</strong><small>Create a private match and play online.</small><b>PLAY</b></button>
+      </section>
+    </section>
+    <section id="playScreen" class="play-screen" hidden>
+      <div class="play-toolbar"><button class="back-button" type="button" onclick="showHub()">← Game hub</button><strong id="gameTitle">Pet a Duck</strong><button class="fullscreen-button" type="button" onclick="toggleFullscreen()">⛶ Full screen</button></div>
+      <iframe id="gameFrame" title="Game"></iframe>
+    </section>
+  </main>
+  <div id="storeModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="storeTitle">
+    <div class="modal-card"><button class="close" type="button" aria-label="Close" onclick="closeStore()">×</button><span class="eyebrow">VIP BUNDLE</span><h2 id="storeTitle">Make your duck sparkle.</h2><ul><li>1,000 shared coins</li><li>5 VIP outfits</li><li>5 VIP furniture pieces</li><li>Duck colour picker in Wardrobe</li></ul><button id="checkoutButton" class="checkout" type="button" onclick="startCheckout()">Continue to secure payment</button><p id="storeMessage" class="store-message">VIP rewards unlock after Stripe confirms payment.</p></div>
+  </div>
+  <script src="sky-arcade.js"></script>
+  <style>
+    /* Sky stays above the grass: every cloud is placed in the blue area only. */
+    body {
+      background:
+        radial-gradient(ellipse 52px 22px at 10% 15%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 34px 27px at 14% 12%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 42px 19px at 18% 16%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 70px 25px at 78% 31%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 38px 30px at 83% 27%, #fff 0 58%, transparent 60%),
+        linear-gradient(#91ddfa 0 66%, #9bdc88 66%);
+    }
+    .topbar { grid-template-columns: 1fr auto; }
+    .dashboard {
+      background:
+        radial-gradient(ellipse 58px 23px at 12% 15%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 37px 29px at 17% 12%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 54px 21px at 24% 16%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 65px 24px at 83% 34%, #fff 0 58%, transparent 60%),
+        radial-gradient(ellipse 41px 29px at 88% 30%, #fff 0 58%, transparent 60%),
+        linear-gradient(#91ddfa 0 66%, #9bdc88 66%);
+    }
+    .game-card { border-color: #fffdf7; color: #56476c; box-shadow: 0 8px #b9a9c9, 0 14px 22px #52799a33; }
+    .game-card small { color: inherit; opacity: .78; }
+    .game-card .game-icon { filter: drop-shadow(0 5px rgba(79, 61, 104, .22)); }
+    .game-card b { color: #6b5b82; box-shadow: 0 3px #ded4e8; }
+    .duck-card { background: linear-gradient(135deg, #fff1a9, #ffd6a5); color: #885529; box-shadow: 0 8px #e2aa68, 0 14px 22px #a7764633; }
+    .space-card { background: linear-gradient(135deg, #cfc7ff, #a9d8ff); color: #4b4a89; box-shadow: 0 8px #8d8bd0, 0 14px 22px #6463a433; }
+    .third-card { background: linear-gradient(135deg, #ffc9de, #f8b6ce); color: #99516d; box-shadow: 0 8px #d987aa, 0 14px 22px #a8527633; }
+    .tiki-card { background: linear-gradient(135deg, #bff3d2, #bdebdc); color: #397764; box-shadow: 0 8px #77c6a5, 0 14px 22px #40876c33; }
+    .rhythm-card { background: linear-gradient(135deg, #e7c5ff, #cfc1ff); color: #72528e; box-shadow: 0 8px #a98bcb, 0 14px 22px #77519b33; }
+    .mystery-card { background: linear-gradient(135deg, #bfefff, #bcd5ff); color: #42769a; box-shadow: 0 8px #79b6d5, 0 14px 22px #4180a433; }
+    .duck-card b { color: #a16528; }.space-card b { color: #5757a0; }.third-card b { color: #a65377; }
+    .tiki-card b { color: #43816d; }.rhythm-card b { color: #765594; }.mystery-card b { color: #4d7d9d; }
+    .game-card.is-locked { filter: saturate(.5) brightness(.9); }
+    .game-card.is-locked::after { content: "LOCKED"; position: absolute; margin-top: 10px; padding: 4px 11px; border-radius: 99px; background: #625b73; color: #fff; font-size: .7rem; font-weight: 900; letter-spacing: .08em; }
+    .game-card.is-locked { position: relative; }
+    .game-card.is-locked b { background: #625b73; color: #fff; box-shadow: 0 3px #443e51; }
+    .multiplayer-zone { margin: 46px auto 14px; text-align: center; }
+    .multiplayer-kicker { color: #347eb8; font-size: .75rem; font-weight: 900; letter-spacing: .14em; }
+    .multiplayer-zone h2 { margin: 5px 0 18px; color: #287fc2; font-size: 2rem; text-shadow: 0 3px #fff; }
+    .multiplayer-card { width: min(100%, 340px); min-height: 210px; margin: auto; background: linear-gradient(135deg, #b9e9ff, #d7c7ff); color: #52628e; box-shadow: 0 8px #8ba5d7, 0 14px 22px #4d6a9b33; }
+    .multiplayer-card b { color: #53679c; }
+    .multiplayer-zone .strike-card { width: min(100%, 340px); min-height: 210px; margin: 0 auto; }
+    .color-card { background: linear-gradient(135deg, #ffd2ed, #cfc7ff); color: #6a3972; box-shadow: 0 8px #a37acd, 0 14px 22px #793f8733; }
+    .color-card small { color: #81528a; }
+    .coming-card { background: linear-gradient(135deg, #d7f5ff, #d8d1ff); color: #5d5992; box-shadow: 0 8px #9290cb, 0 14px 22px #615d9233; cursor: default; opacity: .9; }
+    .coming-card small { color: #7773a7; }
+    body { background: radial-gradient(ellipse 135px 50px at 9% 15%, #fff 0 57%, transparent 59%), radial-gradient(ellipse 95px 43px at 15% 11%, #fff 0 57%, transparent 59%), radial-gradient(ellipse 150px 55px at 88% 22%, #fff 0 57%, transparent 59%), radial-gradient(ellipse 100px 45px at 81% 18%, #fff 0 57%, transparent 59%), radial-gradient(ellipse 165px 60px at 76% 52%, #fff 0 57%, transparent 59%), linear-gradient(#86d7fb 0 66%, #7fce6b 66%); }
+  body { background: url("detailed-clouds.svg") center top / cover no-repeat, linear-gradient(#86d7fb 0 66%, #7fce6b 66%); }
+.dashboard { background: url("detailed-clouds.svg") center top / 100% auto no-repeat, linear-gradient(#91ddfa 0 66%, #9bdc88 66%); }
+</style>
+</body>
+</html>

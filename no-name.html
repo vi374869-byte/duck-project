@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en" data-arcade-game="six">
+<head><script src="arcade-economy.js" data-game="six"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tycoon · Cloud Workshop</title>
+<style>
+  :root {
+    --bg-sky: #0a1424;
+    --pad-green: #00ff88;
+    --pad-blue: #00d9ff;
+    --pad-gold: #ffcc00;
+    --text-hud: #e2e8f0;
+  }
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    margin: 0;
+    padding: 0;
+  }
+  body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-sky);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  #game-viewport {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  canvas {
+    display: block;
+    background: #111d33;
+    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    touch-action: none;
+  }
+
+  #quit-game {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 20;
+    border: 2px solid #00d9ff;
+    border-radius: 10px;
+    padding: 8px 12px;
+    background: #10223e;
+    color: #eaf8ff;
+    font: 800 12px/1 'Segoe UI', sans-serif;
+    cursor: pointer;
+  }
+  #quit-game:hover { background: #17345d; }
+
+  /* HUD Overlays */
+  #hud {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    display: flex;
+    gap: 16px;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .hud-badge {
+    background: rgba(10, 20, 36, 0.85);
+    border: 2px solid #233554;
+    border-radius: 12px;
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    backdrop-filter: blur(6px);
+  }
+  .hud-label {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+  .hud-val {
+    font-size: 20px;
+    font-weight: 900;
+    font-family: monospace;
+  }
+  .val-cash { color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.3); }
+  .val-income { color: #ffcc00; }
+  .val-vault { color: #00e5ff; }
+
+  /* Notification banner */
+  #notify {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid #00ff88;
+    color: #00ff88;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 12;
+  }
+  #level-objective {
+    position: absolute;
+    top: 78px;
+    left: 50%;
+    z-index: 12;
+    transform: translateX(-50%);
+    max-width: min(500px, calc(100vw - 36px));
+    padding: 7px 14px;
+    border: 1px solid #4f8fb4;
+    border-radius: 999px;
+    background: rgba(10, 20, 36, .82);
+    color: #d8f5ff;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  /* Mobile Virtual Joystick */
+  #joystick-zone {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    width: 110px;
+    height: 110px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: none;
+    touch-action: none;
+    z-index: 20;
+  }
+  #joystick-knob {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    background: #00d9ff;
+    border-radius: 50%;
+    top: 33px;
+    left: 33px;
+    box-shadow: 0 0 12px #00d9ff;
+    pointer-events: none;
+  }
+
+  /* Instructions hint */
+  #controls-hint {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    background: rgba(10, 20, 36, 0.7);
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 11px;
+    color: #94a3b8;
+    pointer-events: none;
+  }
+
+  @media (max-width: 560px) {
+    #hud { top: 8px; left: 8px; gap: 6px; }
+    .hud-badge { padding: 5px 8px; border-radius: 8px; }
+    .hud-label { font-size: 8px; }
+    .hud-val { font-size: 14px; }
+    #quit-game { top: 8px; right: 8px; padding: 6px 8px; font-size: 10px; }
+    #controls-hint { display: none; }
+    #level-objective { top: 58px; padding: 5px 9px; font-size: 9px; }
+  }
+</style>
+<link rel="icon" type="image/svg+xml" href="game-logo-six.svg"><link rel="stylesheet" href="arcade-games.css"><script src="pet-a-duck-art.js"></script><script src="arcade-art.js"></script><script src="arcade-controls.js"></script><link rel="stylesheet" href="arcade-controls.css"></head>
+<body>
+
+<div id="game-viewport">
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="hud">
+    <div class="hud-badge">
+      <span class="hud-label">YOUR COINS</span>
+      <span id="cash-txt" class="hud-val val-cash">🪙 0</span>
+    </div>
+    <div class="hud-badge">
+      <span class="hud-label">VAULT PENDING</span>
+      <span id="vault-txt" class="hud-val val-vault">🪙 0</span>
+    </div>
+    <div class="hud-badge">
+      <span class="hud-label">LEVEL</span>
+      <span id="level-txt" class="hud-val val-income">1 / 5</span>
+    </div>
+  </div>
+
+  <div id="notify">PURCHASE UNLOCKED!</div>
+  <div id="level-objective">LEVEL 1: Build the Scrap Dropper and collect 50 coins.</div>
+  <button id="quit-game" type="button">← Arcade</button>
+  <div id="controls-hint">Drag the worker on touch • or use <b>WASD / Arrows</b> • Step on pads to buy • Collect at the green vault</div>
+
+  <div id="joystick-zone">
+    <div id="joystick-knob"></div>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   1. SOUND SYNTHESIS ENGINE (Web Audio API)
+   ========================================================================== */
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playBeep(freq, type='sine', dur=0.1, gainVal=0.08) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    g.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    osc.connect(g);
+    g.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+  } catch(e) {}
+}
+
+function sfxBuy() {
+  playBeep(440, 'triangle', 0.08, 0.1);
+  setTimeout(() => playBeep(880, 'triangle', 0.18, 0.12), 70);
+}
+function sfxCollect() {
+  playBeep(523, 'sine', 0.08, 0.1);
+  setTimeout(() => playBeep(659, 'sine', 0.08, 0.1), 70);
+  setTimeout(() => playBeep(1046, 'sine', 0.18, 0.12), 140);
+}
+function sfxDrop() {
+  playBeep(260, 'square', 0.04, 0.03);
+}
+
+/* ==========================================================================
+   2. TYCOON STATE & TECH TREE DEFINITIONS
+   ========================================================================== */
+let cash = Arcade.read().coins;         // Starting cash
+let vaultCash = 0;      // Accumulated cash at the furnace
+let playerSpeed = 190;
+let insufficientFundsNotice = 0;
+
+// The Player Avatar
+const player = {
+  x: 400,
+  y: 350,
+  size: 20,
+  vx: 0,
+  vy: 0,
+  color: '#ffcc00'
+};
+
+// Particles (for buying bursts & ore grinding)
+let particles = [];
+function addBurst(x, y, color) {
+  for (let i = 0; i < 14; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 3 + 1;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      alpha: 1.0,
+      color: color
+    });
+  }
+}
+
+// Conveyor Path & Smelter Location
+const conveyorBelt = {
+  startX: 200,
+  startY: 250,
+  endX: 620,
+  width: 32,
+  speed: 2.2
+};
+
+const furnace = {
+  x: 630,
+  y: 234,
+  w: 54,
+  h: 64
+};
+
+// Collection Vault Pad (Step on this to collect money)
+const collectPad = {
+  x: 657,
+  y: 330,
+  radius: 28,
+  pulse: 0
+};
+
+// Moving Ore Nuggets
+let ores = [];
+
+// Tycoon Step-On Upgrade Pads
+const pads = [
+  {
+    id: 'scrap_dropper',
+    level: 1,
+    title: 'Scrap Dropper',
+    cost: 50,
+    x: 230, y: 170,
+    radius: 26,
+    bought: false,
+    unlocked: true,
+    color: '#00ff88',
+    nextPads: ['upgrader_1', 'copper_dropper']
+  },
+  {
+    id: 'upgrader_1',
+    level: 2,
+    title: 'Laser Polisher (2x)',
+    cost: 150,
+    x: 410, y: 170,
+    radius: 26,
+    bought: false,
+    unlocked: false,
+    color: '#00d9ff',
+    nextPads: ['speed_boots', 'steel_dropper']
+  },
+  {
+    id: 'copper_dropper',
+    level: 2,
+    title: 'Copper Dropper',
+    cost: 300,
+    x: 290, y: 170,
+    radius: 26,
+    bought: false,
+    unlocked: false,
+    color: '#00ff88',
+    nextPads: ['plasma_fence']
+  },
+  {
+    id: 'speed_boots',
+    level: 3,
+    title: 'Speed Boots',
+    cost: 450,
+    x: 410, y: 430,
+    radius: 26,
+    bought: false,
+    unlocked: false,
+    color: '#ffaa00',
+    nextPads: ['quartz_dropper']
+  },
+  {
+    id: 'steel_dropper',
+    level: 3,
+    title: 'Steel Foundry',
+    cost: 800,
+    x: 350, y: 170,
+    radius: 26,
+    bought: false,
+    unlocked: false,
+    color: '#00ff88',
+    nextPads: ['sky_turret']
+  },
+  {
+    id: 'plasma_fence',
+    level: 4,
+    title: 'Energy Walls',
+    cost: 1200,
+    x: 180, y: 430,
+    radius: 26,
+    bought: false,
+    unlocked: false,
+    color: '#a855f7',
+    nextPads: []
+  },
+  {
+    id: 'quartz_dropper',
+    level: 4,
+    title: 'Sky Quartz Dropper',
+    cost: 2500,
+    x: 230, y: 350,
+    radius: 26,
+    bought: false,
+    unlocked: false,
+    color: '#00ff88',
+    nextPads: []
+  },
+  {
+    id: 'sky_turret',
+    level: 5,
+    title: 'Sky Defense Turret',
+    cost: 4000,
+    x: 657, y: 150,
+    radius: 26,
+    bought: false,
+    unlocked: false,
+    color: '#ef4444',
+    nextPads: []
+  }
+];
+
+// Each level has a larger collection goal and requires more machinery than the
+// last. Future level pads stay asleep until the current mission is completed.
+const levels = [
+  { name: 'Scrap Yard', goal: 50, required: ['scrap_dropper'], collected: 0, complete: false },
+  { name: 'Copper Circuit', goal: 350, required: ['upgrader_1', 'copper_dropper'], collected: 0, complete: false },
+  { name: 'Steel Skyline', goal: 1200, required: ['speed_boots', 'steel_dropper'], collected: 0, complete: false },
+  { name: 'Quartz Cloudworks', goal: 3800, required: ['plasma_fence', 'quartz_dropper'], collected: 0, complete: false },
+  { name: 'Sky Fortress', goal: 9000, required: ['sky_turret'], collected: 0, complete: false }
+];
+let currentLevel = 1;
+
+function getCurrentLevel() { return levels[currentLevel - 1]; }
+function updateLevelHud() {
+  const level = getCurrentLevel();
+  document.getElementById('level-txt').textContent = `${currentLevel} / ${levels.length}`;
+  document.getElementById('level-objective').textContent = level.complete
+    ? 'AERO-LAB MASTER: all five levels complete!'
+    : `LEVEL ${currentLevel}: ${level.name} — build the required machines and collect 🪙 ${level.goal.toLocaleString()} (🪙 ${Math.floor(level.collected).toLocaleString()} / 🪙 ${level.goal.toLocaleString()}).`;
+}
+
+function unlockLevel(levelNumber) {
+  pads.filter(pad => pad.level === levelNumber && !pad.bought).forEach(pad => { pad.unlocked = true; });
+}
+
+function checkLevelProgress() {
+  const level = getCurrentLevel();
+  const hasMachines = level.required.every(id => pads.find(pad => pad.id === id)?.bought);
+  if (level.complete || !hasMachines || level.collected < level.goal) return;
+
+  level.complete = true;
+  if (currentLevel < levels.length) {
+    currentLevel += 1;
+    unlockLevel(currentLevel);
+    showNotification(`LEVEL ${currentLevel} UNLOCKED: ${getCurrentLevel().name.toUpperCase()}!`);
+  } else {
+    showNotification('AERO-LAB MASTER! ALL FIVE LEVELS COMPLETE!');
+    Arcade.earn(100, 'six', 'tycoon-complete');
+  }
+  updateLevelHud();
+}
+
+// Active Machine Objects spawned by pads
+const droppers = [];
+const worldUpgraders = [];
+let hasWalls = false;
+let hasTurret = false;
+
+function activateUpgrade(pad) {
+  pad.bought = true;
+  addBurst(pad.x, pad.y, pad.color);
+  sfxBuy();
+
+  // Unlock connected pads
+  pad.nextPads.forEach(nextId => {
+    const target = pads.find(p => p.id === nextId);
+    if (target && target.level <= currentLevel) target.unlocked = true;
+  });
+
+  // Materialize machine in world
+  if (pad.id === 'scrap_dropper') {
+    droppers.push({ x: 230, y: 220, rate: 1300, timer: 0, val: 10, name: 'Scrap', color: '#94a3b8' });
+  } else if (pad.id === 'copper_dropper') {
+    droppers.push({ x: 290, y: 220, rate: 1100, timer: 0, val: 35, name: 'Copper', color: '#f97316' });
+  } else if (pad.id === 'steel_dropper') {
+    droppers.push({ x: 350, y: 220, rate: 950, timer: 0, val: 90, name: 'Steel', color: '#cbd5e1' });
+  } else if (pad.id === 'quartz_dropper') {
+    droppers.push({ x: 230, y: 290, rate: 800, timer: 0, val: 280, name: 'Quartz', color: '#38bdf8' });
+  } else if (pad.id === 'upgrader_1') {
+    worldUpgraders.push({ x: 410, y: 234, w: 28, h: 64, multiplier: 2 });
+  } else if (pad.id === 'speed_boots') {
+    playerSpeed = 305;
+    showNotification("SPEED BOOTS EQUIPPED! MOVEMENT +60%");
+  } else if (pad.id === 'plasma_fence') {
+    hasWalls = true;
+    showNotification("PERIMETER DEFENSE GRIDS ONLINE!");
+  } else if (pad.id === 'sky_turret') {
+    hasTurret = true;
+    showNotification("SKY TURRET ACTIVE! BASE PROTECTED!");
+  }
+  checkLevelProgress();
+  updateLevelHud();
+  saveTycoon();
+}
+
+function showNotification(msg) {
+  const el = document.getElementById('notify');
+  el.innerText = msg;
+  el.style.opacity = '1';
+  setTimeout(() => el.style.opacity = '0', 2500);
+}
+
+/* ==========================================================================
+   3. CANVAS SETUP & CONTROLS
+   ========================================================================== */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  // The logical island stays the same size. CSS scales it to fit phones,
+  // tablets and desktops so every machine remains reachable.
+  const worldWidth = 800;
+  const worldHeight = 520;
+  const scale = Math.min(window.innerWidth / worldWidth, window.innerHeight / worldHeight);
+  canvas.width = worldWidth;
+  canvas.height = worldHeight;
+  canvas.style.width = `${Math.floor(worldWidth * scale)}px`;
+  canvas.style.height = `${Math.floor(worldHeight * scale)}px`;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Keyboard inputs
+const keys = {};
+window.addEventListener('keydown', (e) => {
+  initAudio();
+  keys[e.key.toLowerCase()] = true;
+});
+window.addEventListener('keyup', (e) => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+// Mobile Virtual Joystick
+const joystickZone = document.getElementById('joystick-zone');
+const joystickKnob = document.getElementById('joystick-knob');
+let joystickActive = false;
+let joyX = 0, joyY = 0;
+
+// Touch players can grab the worker directly and drag them around the island.
+// Keyboard and the on-screen joystick continue to work at the same time.
+let workerDragPointer = null;
+window.addEventListener('arcade-input-reset',()=>workerDragPointer=null);
+function moveWorkerToPointer(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * canvas.width / rect.width;
+  const y = (e.clientY - rect.top) * canvas.height / rect.height;
+  player.x = Math.max(140, Math.min(canvas.width - 140, x));
+  player.y = Math.max(100, Math.min(canvas.height - 100, y));
+}
+canvas.addEventListener('pointerdown', (e) => {
+  if (ArcadeControls.mode !== 'mobile') return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * canvas.width / rect.width;
+  const y = (e.clientY - rect.top) * canvas.height / rect.height;
+  if (Math.hypot(x - player.x, y - player.y) > player.size * 1.8) return;
+  initAudio();
+  workerDragPointer = e.pointerId;
+  canvas.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (e.pointerId !== workerDragPointer) return;
+  moveWorkerToPointer(e);
+  e.preventDefault();
+});
+function stopWorkerDrag(e) {
+  if (e.pointerId !== workerDragPointer) return;
+  workerDragPointer = null;
+}
+canvas.addEventListener('pointerup', stopWorkerDrag);
+canvas.addEventListener('pointercancel', stopWorkerDrag);
+
+document.getElementById('quit-game').addEventListener('click', () => {
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'game-return-hub' }, '*');
+  } else {
+    window.location.href = 'index.html';
+  }
+});
+
+/* ==========================================================================
+   4. SIMULATION & GAME LOOP
+   ========================================================================== */
+function update(deltaMs) {
+  cash = Arcade.read().coins;
+  // Player Movement
+  let dx = 0, dy = 0;
+  if (keys['w'] || keys['arrowup']) dy -= 1;
+  if (keys['s'] || keys['arrowdown']) dy += 1;
+  if (keys['a'] || keys['arrowleft']) dx -= 1;
+  if (keys['d'] || keys['arrowright']) dx += 1;
+
+  if (joystickActive) {
+    dx = joyX;
+    dy = joyY;
+  }
+
+  // Normalize diagonal
+  const len = Math.hypot(dx, dy);
+  if (len > 0) {
+    player.x += (dx / len) * playerSpeed * deltaMs / 1000;
+    player.y += (dy / len) * playerSpeed * deltaMs / 1000;
+  }
+
+  // Bound player to island platform
+  player.x = Math.max(140, Math.min(canvas.width - 140, player.x));
+  player.y = Math.max(100, Math.min(canvas.height - 100, player.y));
+
+  // Check Step-On Pads (Upgrades)
+  pads.forEach(pad => {
+    if (pad.unlocked && !pad.bought) {
+      const dist = Math.hypot(player.x - pad.x, player.y - pad.y);
+      if (dist < pad.radius + player.size / 2) {
+        if (Arcade.spend(pad.cost)) {
+          cash = Arcade.read().coins;
+          activateUpgrade(pad);
+        } else if (Date.now() > insufficientFundsNotice) {
+          showNotification(`NEED 🪙 ${pad.cost.toLocaleString()} FOR ${pad.title.toUpperCase()}`);
+          insufficientFundsNotice = Date.now() + 1800;
+        }
+      }
+    }
+  });
+
+  // Check Step-On Vault Collector Pad
+  const distVault = Math.hypot(player.x - collectPad.x, player.y - collectPad.y);
+  if (distVault < collectPad.radius + player.size / 2) {
+    if (vaultCash > 0) {
+      const collected = vaultCash;
+      Arcade.earn(Math.floor(collected));
+      cash = Arcade.read().coins;
+      getCurrentLevel().collected += collected;
+      addBurst(collectPad.x, collectPad.y, '#00ff88');
+      sfxCollect();
+      vaultCash = 0;
+      checkLevelProgress();
+      updateLevelHud();
+      saveTycoon();
+    }
+  }
+
+  // Droppers Spawning Ores
+  droppers.forEach(d => {
+    d.timer += deltaMs;
+    if (d.timer >= d.rate) {
+      d.timer = 0;
+      ores.push({
+        x: d.x,
+        y: conveyorBelt.startY + (Math.random() * 8 - 4),
+        val: d.val,
+        color: d.color,
+        upgraded: false
+      });
+      sfxDrop();
+    }
+  });
+
+  // Move Ores Along Conveyor
+  for (let i = ores.length - 1; i >= 0; i--) {
+    const ore = ores[i];
+    ore.x += conveyorBelt.speed * deltaMs / 16.67;
+
+    // Check collision with Upgrader laser gates
+    worldUpgraders.forEach(u => {
+      if (!ore.upgraded && Math.abs(ore.x - u.x) < 8) {
+        ore.upgraded = true;
+        ore.val *= u.multiplier;
+        ore.color = '#00ffff';
+        addBurst(ore.x, ore.y, '#00ffff');
+      }
+    });
+
+    // Ore enters the Smelter Furnace
+    if (ore.x >= furnace.x) {
+      vaultCash += ore.val;
+      addBurst(furnace.x + 10, furnace.y + 32, '#ffaa00');
+      ores.splice(i, 1);
+    }
+  }
+
+  // Update Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.alpha -= 2.4 * deltaMs / 1000;
+    if (p.alpha <= 0) particles.splice(i, 1);
+  }
+
+  // Update HUD elements
+  document.getElementById('cash-txt').innerText = `🪙 ${Math.floor(cash).toLocaleString()}`;
+  document.getElementById('vault-txt').innerText = `🪙 ${Math.floor(vaultCash).toLocaleString()}`;
+}
+
+/* ==========================================================================
+   5. DRAWING & VISUAL RENDERING
+   ========================================================================== */
+let beltScroll = 0;
+
+function draw(deltaMs) {
+  beltScroll = (beltScroll + conveyorBelt.speed * deltaMs / 16.67) % 16;
+  ArcadeArt.tycoon(ctx,canvas.width,canvas.height,{conveyorBelt,beltScroll,worldUpgraders,droppers,furnace,ores,pads,cash,collectPad,vaultCash,player,particles,hasWalls,hasTurret});
+}
+
+let restoringTycoon = true;
+function saveTycoon() {
+  if (restoringTycoon) return;
+  try { localStorage.setItem('arcadeTycoonV1', JSON.stringify({bought:pads.filter(p=>p.bought).map(p=>p.id),currentLevel,levels:levels.map(l=>({collected:l.collected,complete:l.complete}))})); } catch (_) {}
+}
+const tycoonSave = Arcade.safeRead('arcadeTycoonV1');
+currentLevel = Math.max(1,Math.min(levels.length,Number(tycoonSave.currentLevel)||1));
+if (Array.isArray(tycoonSave.levels)) tycoonSave.levels.forEach((l,i)=>{if(levels[i]){levels[i].collected=Math.max(0,Number(l.collected)||0);levels[i].complete=l.complete===true;}});
+if (Array.isArray(tycoonSave.bought)) for(const pad of pads) if(tycoonSave.bought.includes(pad.id)) activateUpgrade(pad);
+unlockLevel(currentLevel);
+restoringTycoon = false;
+updateLevelHud();
+let lastFrame = performance.now();
+function loop(now) {
+  const deltaMs = Math.min(50, now - lastFrame);
+  lastFrame = now;
+  update(deltaMs);
+  draw(deltaMs);
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+</script>
+<script src="arcade-game-inputs.js"></script></body>
+</html>

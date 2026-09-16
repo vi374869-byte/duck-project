@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" data-arcade-game="cloud-lobby">
+<head><script src="arcade-economy.js" data-game="cloud"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cloud Club</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { min-height:100vh; margin:0; display:grid; place-items:center; overflow:hidden; font-family:"Trebuchet MS",system-ui,sans-serif; color:#35647f; background:radial-gradient(ellipse 70px 26px at 14% 16%,#fff 0 58%,transparent 60%),radial-gradient(ellipse 42px 32px at 19% 12%,#fff 0 58%,transparent 60%),radial-gradient(ellipse 78px 29px at 84% 34%,#fff 0 58%,transparent 60%),linear-gradient(#91ddfa 0 67%,#9bdc88 67%); }
+    .lobby { width:min(560px,94vw); padding:clamp(20px,5vw,38px); border:6px solid #fff; border-radius:30px; background:linear-gradient(#e6f8ff,#cbf0ff); box-shadow:0 9px #318fc1,0 22px 42px #15517166; text-align:center; }
+    .top { display:flex; justify-content:space-between; align-items:center; gap:12px; } h1 { margin:0; color:#287fc2; font-size:clamp(2rem,8vw,3.6rem); text-shadow:0 4px #fff,0 7px #68b7e2; } .top button { border:3px solid #fff; border-radius:12px; padding:8px 11px; background:#fff2a7; color:#895400; font-weight:900; box-shadow:0 3px #d49b20; cursor:pointer; }
+    .subtitle { margin:10px auto 26px; font-weight:800; } .room-card { padding:20px; border:4px solid #fff; border-radius:22px; background:#fff8e9; box-shadow:0 5px #e6b96d; } label { display:block; margin:10px 0 5px; font-size:.78rem; font-weight:900; letter-spacing:.08em; } input { width:min(100%,330px); border:3px solid #9dd7ee; border-radius:13px; padding:11px 13px; outline:none; font:800 1rem inherit; text-align:center; color:#35647f; } input:focus { border-color:#5baed1; }
+    .offline-debug { width:100%; min-height:48px; border:3px solid #fff; border-radius:14px; padding:8px; background:#ffcf7c; color:#805324; font-weight:900; cursor:pointer; box-shadow:0 4px #d99843; } .offline-debug:active { transform:translateY(2px); box-shadow:0 2px #d99843; }
+    .actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; } .actions button { border:3px solid #fff; border-radius:14px; min-height:50px; padding:8px; color:#fff; font-weight:900; cursor:pointer; text-shadow:0 2px #547e9a; box-shadow:0 4px #7ba7c4; } #create { background:#78ca9a; } #join { background:#a891db; } button:disabled { opacity:.55; cursor:wait; }
+    #status { min-height:24px; margin:17px 0 4px; color:#417897; font-weight:900; } .room-code { color:#277fc2; font-size:1.5rem; letter-spacing:.16em; } #players { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:12px; } .player { padding:6px 10px; border-radius:99px; background:#c8f1ce; color:#397764; font-size:.85rem; font-weight:900; } .note { margin:18px 0 0; color:#4e7890; font-size:.78rem; font-weight:700; line-height:1.5; }
+    @media(max-width:420px) { .actions { grid-template-columns:1fr; } }
+  </style>
+<link rel="stylesheet" href="arcade-games.css"><script src="pet-a-duck-art.js"></script><script src="arcade-art.js"></script><script src="arcade-controls.js"></script><link rel="stylesheet" href="arcade-controls.css"></head>
+<body>
+  <main class="lobby">
+    <div class="top"><button id="quit" type="button">← Arcade</button><span>☁ CLOUD CLUB</span></div>
+    <h1>Play together</h1>
+    <p class="subtitle">Create a private room, then share its code with a friend.</p>
+    <section class="room-card">
+      <button id="offlineDebug" class="offline-debug" type="button">OFFLINE DEBUG · 1 PLAYER + 3 BOTS</button>
+      <label for="playerName">YOUR NAME</label>
+      <input id="playerName" maxlength="18" value="Player" autocomplete="nickname">
+      <label for="roomCode">ROOM CODE</label>
+      <input id="roomCode" maxlength="6" placeholder="ABC123" autocomplete="off">
+      <div class="actions"><button id="create" type="button">CREATE ROOM</button><button id="join" type="button">JOIN ROOM</button></div>
+      <p id="status" role="status">Connecting to Cloud Club…</p>
+      <div id="players" aria-live="polite"></div>
+    </section>
+    <p class="note">This lobby is ready for the next multiplayer game. Start the Python room server before inviting friends.</p>
+  </main>
+  <script>
+    const statusEl = document.getElementById('status'), roomCode = document.getElementById('roomCode'), nameInput = document.getElementById('playerName'), playersEl = document.getElementById('players');
+    const createButton = document.getElementById('create'), joinButton = document.getElementById('join');
+    let socket;
+    const socketUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname || 'localhost'}:8765`;
+    function setStatus(message) { statusEl.textContent = message; }
+    function playerName() { return nameInput.value.trim() || 'Player'; }
+    function send(message) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)); else setStatus('Multiplayer server is offline. Start multiplayer_server.py first.'); }
+    function renderPlayers(players) { playersEl.innerHTML = ''; players.forEach(name => { const tag = document.createElement('span'); tag.className = 'player'; tag.textContent = `☁ ${name}`; playersEl.append(tag); }); }
+    function connect() {
+      socket = new WebSocket(socketUrl);
+      socket.onopen = () => { setStatus('Ready — create or join a room.'); createButton.disabled = joinButton.disabled = false; };
+      socket.onclose = () => { setStatus('Multiplayer server is offline. Start multiplayer_server.py first.'); createButton.disabled = joinButton.disabled = true; };
+      socket.onerror = () => setStatus('Could not reach the multiplayer server.');
+      socket.onmessage = event => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'error') return setStatus(message.message);
+        if (message.type === 'room_joined') { roomCode.value = message.room; roomCode.readOnly = true; renderPlayers(message.players); setStatus(`Room ${message.room} is ready. Share this code!`); }
+        if (message.type === 'players') renderPlayers(message.players);
+      };
+    }
+    createButton.onclick = () => send({ type:'create_room', player:playerName() });
+    joinButton.onclick = () => send({ type:'join_room', room:roomCode.value, player:playerName() });
+    document.getElementById('offlineDebug').onclick = () => { location.href = 'cloud-duel-offline.html?mode=offline&build=3'; };
+    document.getElementById('quit').onclick = () => { if (parent !== window) parent.postMessage({ type:'game-return-hub' }, '*'); else location.href = 'index.html'; };
+    createButton.disabled = joinButton.disabled = true;
+    connect();
+  </script>
+</body>
+</html>

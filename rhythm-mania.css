@@ -1,0 +1,325 @@
+:root {
+  --neon-cyan: #00f0ff;
+  --neon-pink: #ff0055;
+  --neon-purple: #9d00ff;
+  --neon-yellow: #ffee00;
+  --neon-green: #00ff66;
+  --bg-dark: #070913;
+  --panel-bg: rgba(14, 18, 36, 0.85);
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+  margin: 0;
+  padding: 0;
+  font-family: 'Consolas', 'Menlo', 'Monaco', monospace;
+}
+
+body {
+  background: var(--bg-dark);
+  color: #fff;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+#game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  max-width: 600px;
+  background: #0b0f19;
+  box-shadow: 0 0 50px rgba(0, 240, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+#stage {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* HUD elements */
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(0,0,0,0.8), transparent);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hud-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hud-item .label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #8892b0;
+  margin-bottom: 2px;
+}
+
+#score-display {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 8px var(--neon-cyan);
+}
+
+#acc-display {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--neon-yellow);
+}
+
+.health-wrap {
+  width: 90px;
+}
+
+#life-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #232b42;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #4a5578;
+}
+
+#life-bar-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan));
+  transition: width 0.08s linear;
+}
+
+#progress-display {
+  font-size: 14px;
+  color: #ccd6f6;
+}
+
+/* Central Judgement readout */
+#judgement-display {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 0.05s ease-out;
+  text-shadow: 0 0 12px currentColor;
+  z-index: 15;
+}
+
+#combo-container {
+  position: absolute;
+  top: 61%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 15;
+}
+
+#combo-counter {
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 15px rgba(255,255,255,0.8);
+}
+
+#combo-label {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #8892b0;
+}
+
+#delta-display {
+  position: absolute;
+  top: 67%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 15;
+}
+
+/* Fullscreen Overlays */
+.screen {
+  position: absolute;
+  inset: 0;
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+  z-index: 50;
+  transition: opacity 0.25s ease;
+}
+
+.screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.glitch-title {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--neon-cyan);
+  text-shadow: 2px 2px 0 var(--neon-pink);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: #8892b0;
+  margin-bottom: 25px;
+}
+
+.song-card {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+}
+
+.level-picker { display: flex; gap: 10px; justify-content: center; padding: 12px; }
+.btn-level { flex: 1; border: 1px solid #2e4667; border-radius: 10px; background: #111d2f; color: #b9d6f2; padding: 10px; font-weight: 800; cursor: pointer; }
+.btn-level.active { border-color: #00eaff; background: #123a55; color: #fff; box-shadow: 0 0 12px #00eaff55; }
+
+.song-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.song-artist {
+  font-size: 12px;
+  color: #8892b0;
+  margin-top: 4px;
+}
+
+.diff-selector {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn-diff {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #4a5578;
+  color: #8892b0;
+  padding: 8px 0;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.btn-diff.active {
+  border-color: var(--neon-cyan);
+  color: #fff;
+  background: rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+}
+
+.settings-strip {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+  font-size: 11px;
+  color: #ccd6f6;
+}
+
+.settings-strip label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-strip input[type="range"] {
+  width: 45%;
+}
+
+.keybind-hint {
+  font-size: 11px;
+  color: #8892b0;
+  margin-bottom: 24px;
+}
+
+.btn-cta {
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+  color: #fff;
+  border: none;
+  padding: 14px 40px;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+  transition: transform 0.1s;
+}
+
+.btn-cta:hover {
+  transform: scale(1.03);
+}
+
+/* Results modal */
+#result-grade {
+  font-size: 58px;
+  font-weight: 900;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 25px var(--neon-yellow);
+  margin-bottom: 15px;
+}
+
+.result-stats {
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 25px;
+  font-size: 13px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.result-stats hr {
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin: 10px 0;
+}
+
+.color-marvelous { color: var(--neon-cyan); }
+.color-perfect   { color: var(--neon-yellow); }
+.color-great     { color: var(--neon-green); }
+.color-ok        { color: var(--neon-purple); }
+.color-miss      { color: var(--neon-pink); }

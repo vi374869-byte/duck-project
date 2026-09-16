@@ -1,0 +1,10 @@
+{
+  "name": "Virtual Duck Haven",
+  "short_name": "DuckHaven",
+  "description": "A cozy virtual pet duck care and mini-game experience.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#e0f2fe",
+  "theme_color": "#38bdf8",
+  "icons": []
+}
